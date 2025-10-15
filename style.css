@@ -1,95 +1,253 @@
-/* --- CSS RESET & DEFAULTS --- */
+/* --- RESET CSS E VALORES PADRÃO --- */
+
+/* Reset global: remove margens e paddings padrão e aplica border-box para todos os elementos */
 * {
-    box-sizing: border-box;
+    box-sizing: border-box; /* Inclui padding e border no cálculo de width/height */
     margin: 0;
     padding: 0;
 }
 
+/* Variáveis CSS globais para consistência de cores e temas */
 :root {
-    --background: #f1f5f9;
-    --foreground: #0f172a;
-    --card: #ffffff;
-    --primary: #3b82f6;
-    --primary-foreground: #ffffff;
-    --border: #e2e8f0;
-    --muted-foreground: #64748b;
-    --success: #22c55e;
-    --danger: #ef4444;
+    --background: #f1f5f9;         /* Cor de fundo principal - azul muito claro */
+    --foreground: #0f172a;         /* Cor do texto - azul escuro quase preto */
+    --card: #ffffff;               /* Cor de fundo dos cards - branco */
+    --primary: #3b82f6;            /* Cor primária - azul */
+    --primary-foreground: #ffffff; /* Texto sobre fundo primário - branco */
+    --border: #e2e8f0;            /* Cor das bordas - cinza claro */
+    --muted-foreground: #64748b;  /* Texto secundário - cinza azulado */
+    --success: #22c55e;           /* Cor de sucesso - verde */
+    --danger: #ef4444;            /* Cor de perigo/erro - vermelho */
 }
 
+/* Estilos base do corpo da página */
 body {
-    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; /* Font stack moderna */
     background-color: var(--background);
     color: var(--foreground);
-    line-height: 1.5;
+    line-height: 1.5; /* Espaçamento entre linhas para melhor legibilidade */
 }
 
+/* Container principal da aplicação */
 #app {
     display: flex;
-    height: 100vh;
+    height: 100vh; /* Ocupa 100% da altura da viewport */
 }
 
-.view { display: none; }
-.view.active { display: flex; width: 100%; }
+/* Sistema de views/tele - escondido por padrão */
+.view { 
+    display: none; 
+}
+/* View ativa - flex para layout e 100% de largura */
+.view.active { 
+    display: flex; 
+    width: 100%; 
+}
 
-/* --- LOGIN VIEW --- */
+/* --- ESTILOS DA TELA DE LOGIN --- */
 #login-view {
-    justify-content: center;
-    align-items: center;
+    justify-content: center;  /* Centraliza horizontalmente */
+    align-items: center;      /* Centraliza verticalmente */
 }
 
+/* Container do formulário de login */
 .login-container .card {
     width: 100%;
-    max-width: 400px;
-    padding: 2rem;
+    max-width: 400px; /* Largura máxima para formulários */
+    padding: 2rem;    /* Espaçamento interno */
 }
 
-.card-header { text-align: center; margin-bottom: 1.5rem; }
-.logo { display: inline-flex; background-color: var(--primary); color: var(--primary-foreground); padding: .75rem; border-radius: 9999px; margin-bottom: 1rem; }
-.card-title { font-size: 1.5rem; font-weight: 600; margin-bottom: 0.25rem;}
-.card-description { color: var(--muted-foreground); }
-.form-group { margin-bottom: 1rem; }
-label { display: block; margin-bottom: 0.5rem; font-weight: 500; }
-input { width: 100%; padding: .75rem; border: 1px solid var(--border); border-radius: .375rem; font-size: 1rem; }
-.error-message { color: var(--danger); margin-top: 1rem; text-align: center;}
-.test-data { margin-top: 1rem; padding: 1rem; background-color: #f8fafc; border: 1px solid var(--border); border-radius: .375rem; text-align: center; font-size: 0.9rem; color: var(--muted-foreground); }
+/* Cabeçalho do card */
+.card-header { 
+    text-align: center; 
+    margin-bottom: 1.5rem; 
+}
 
+/* Logo circular com fundo primário */
+.logo { 
+    display: inline-flex; 
+    background-color: var(--primary); 
+    color: var(--primary-foreground); 
+    padding: .75rem; 
+    border-radius: 9999px; /* Borda completamente arredondada */
+    margin-bottom: 1rem; 
+}
 
-/* --- MAIN LAYOUT --- */
+/* Título principal do card */
+.card-title { 
+    font-size: 1.5rem; 
+    font-weight: 600; 
+    margin-bottom: 0.25rem;
+}
+
+/* Texto descritivo secundário */
+.card-description { 
+    color: var(--muted-foreground); 
+}
+
+/* Grupo de formulário */
+.form-group { 
+    margin-bottom: 1rem; 
+}
+
+/* Labels dos formulários */
+label { 
+    display: block; 
+    margin-bottom: 0.5rem; 
+    font-weight: 500; 
+}
+
+/* Campos de input */
+input { 
+    width: 100%; 
+    padding: .75rem; 
+    border: 1px solid var(--border); 
+    border-radius: .375rem; 
+    font-size: 1rem; 
+}
+
+/* Mensagem de erro */
+.error-message { 
+    color: var(--danger); 
+    margin-top: 1rem; 
+    text-align: center;
+}
+
+/* Área de dados de teste */
+.test-data { 
+    margin-top: 1rem; 
+    padding: 1rem; 
+    background-color: #f8fafc; 
+    border: 1px solid var(--border); 
+    border-radius: .375rem; 
+    text-align: center; 
+    font-size: 0.9rem; 
+    color: var(--muted-foreground); 
+}
+
+/* --- LAYOUT PRINCIPAL DA APLICAÇÃO --- */
+
+/* Sidebar lateral */
 .sidebar {
-    width: 250px;
+    width: 250px; /* Largura fixa */
     background-color: var(--card);
-    border-right: 1px solid var(--border);
+    border-right: 1px solid var(--border); /* Linha divisória */
     padding: 1.5rem 1rem;
     display: flex;
-    flex-direction: column;
+    flex-direction: column; /* Layout vertical */
 }
 
+/* Área de conteúdo principal */
 .main-content {
-    flex: 1;
+    flex: 1; /* Ocupa todo o espaço restante */
     padding: 2rem;
-    overflow-y: auto;
+    overflow-y: auto; /* Scroll vertical se necessário */
 }
 
-/* --- SIDEBAR --- */
-.sidebar-header { display: flex; align-items: center; gap: .75rem; padding: 0 0.5rem 1.5rem; }
-.sidebar-header .logo { margin: 0; }
-.user-info { display: flex; align-items: center; gap: .75rem; background-color: var(--background); padding: .75rem; border-radius: .5rem; margin-bottom: 1.5rem; }
-.avatar { width: 40px; height: 40px; border-radius: 50%; }
-.user-name { font-weight: 600; }
-.user-email { font-size: .8rem; color: var(--muted-foreground); }
-.sidebar-nav { display: flex; flex-direction: column; gap: .25rem; flex-grow: 1;}
-.nav-btn { background: none; border: none; text-align: left; padding: .75rem 1rem; width: 100%; border-radius: .375rem; cursor: pointer; font-size: 1rem; color: var(--foreground); }
-.nav-btn:hover { background-color: var(--background); }
-.nav-btn.active { background-color: var(--primary); color: var(--primary-foreground); }
-.btn-logout { background-color: var(--danger); margin-top: 1rem; }
+/* --- ESTILOS DA SIDEBAR --- */
 
-/* --- MAIN CONTENT --- */
-.header { margin-bottom: 2rem; }
-.header h1 { font-size: 2rem; font-weight: 700; margin-bottom: .25rem; }
-.header p { color: var(--muted-foreground); }
+/* Cabeçalho da sidebar com logo */
+.sidebar-header { 
+    display: flex; 
+    align-items: center; 
+    gap: .75rem; /* Espaço entre elementos */
+    padding: 0 0.5rem 1.5rem; 
+}
 
-/* --- UTILITIES & COMPONENTS --- */
+/* Remove margem do logo na sidebar */
+.sidebar-header .logo { 
+    margin: 0; 
+}
+
+/* Informações do usuário */
+.user-info { 
+    display: flex; 
+    align-items: center; 
+    gap: .75rem; 
+    background-color: var(--background); 
+    padding: .75rem; 
+    border-radius: .5rem; 
+    margin-bottom: 1.5rem; 
+}
+
+/* Avatar do usuário */
+.avatar { 
+    width: 40px; 
+    height: 40px; 
+    border-radius: 50%; /* Imagem circular */
+}
+
+/* Nome do usuário */
+.user-name { 
+    font-weight: 600; 
+}
+
+/* Email do usuário */
+.user-email { 
+    font-size: .8rem; 
+    color: var(--muted-foreground); 
+}
+
+/* Navegação da sidebar */
+.sidebar-nav { 
+    display: flex; 
+    flex-direction: column; 
+    gap: .25rem; /* Pequeno espaço entre botões */
+    flex-grow: 1; /* Ocupa espaço disponível */
+}
+
+/* Botões de navegação */
+.nav-btn { 
+    background: none; 
+    border: none; 
+    text-align: left; 
+    padding: .75rem 1rem; 
+    width: 100%; 
+    border-radius: .375rem; 
+    cursor: pointer; 
+    font-size: 1rem; 
+    color: var(--foreground); 
+}
+
+/* Efeito hover nos botões */
+.nav-btn:hover { 
+    background-color: var(--background); 
+}
+
+/* Botão ativo/selecionado */
+.nav-btn.active { 
+    background-color: var(--primary); 
+    color: var(--primary-foreground); 
+}
+
+/* Botão de logout */
+.btn-logout { 
+    background-color: var(--danger); 
+    margin-top: 1rem; 
+}
+
+/* --- CONTEÚDO PRINCIPAL --- */
+
+/* Cabeçalho das páginas */
+.header { 
+    margin-bottom: 2rem; 
+}
+
+/* Título principal */
+.header h1 { 
+    font-size: 2rem; 
+    font-weight: 700; 
+    margin-bottom: .25rem; 
+}
+
+/* Descrição do cabeçalho */
+.header p { 
+    color: var(--muted-foreground); 
+}
+
+/* --- COMPONENTES E UTILITÁRIOS --- */
+
+/* Botão base */
 .btn {
     display: inline-block;
     padding: .75rem 1.5rem;
@@ -100,43 +258,120 @@ input { width: 100%; padding: .75rem; border: 1px solid var(--border); border-ra
     font-weight: 500;
     width: 100%;
 }
-.btn-primary { background-color: var(--primary); color: var(--primary-foreground); }
 
+/* Variante primária do botão */
+.btn-primary { 
+    background-color: var(--primary); 
+    color: var(--primary-foreground); 
+}
+
+/* Componente card */
 .card {
     background-color: var(--card);
     border: 1px solid var(--border);
     border-radius: .75rem;
     margin-bottom: 1.5rem;
 }
-.card-content { padding: 1.5rem; }
-.card .card-header { padding: 1.5rem 1.5rem 0; text-align: left; }
-.card-title-sm { font-size: 1rem; font-weight: 500; color: var(--muted-foreground); }
-.stat-value { font-size: 2rem; font-weight: 700; }
-.stat-desc { font-size: .8rem; color: var(--muted-foreground); }
-.progress-bar { height: 8px; background-color: var(--background); border-radius: 4px; overflow: hidden; margin-top: .5rem;}
-.progress-bar div { height: 100%; background-color: var(--primary); }
-.grid-2 { display: grid; grid-template-columns: repeat(2, 1fr); gap: 1.5rem; }
-.grid-4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 1.5rem; margin-bottom: 1.5rem; }
 
+/* Conteúdo do card */
+.card-content { 
+    padding: 1.5rem; 
+}
+
+/* Cabeçalho do card (quando dentro de um card) */
+.card .card-header { 
+    padding: 1.5rem 1.5rem 0; 
+    text-align: left; 
+}
+
+/* Título pequeno para cards */
+.card-title-sm { 
+    font-size: 1rem; 
+    font-weight: 500; 
+    color: var(--muted-foreground); 
+}
+
+/* Valor estatístico (número grande) */
+.stat-value { 
+    font-size: 2rem; 
+    font-weight: 700; 
+}
+
+/* Descrição de estatística */
+.stat-desc { 
+    font-size: .8rem; 
+    color: var(--muted-foreground); 
+}
+
+/* Barra de progresso */
+.progress-bar { 
+    height: 8px; 
+    background-color: var(--background); 
+    border-radius: 4px; 
+    overflow: hidden; 
+    margin-top: .5rem;
+}
+
+/* Preenchimento da barra de progresso */
+.progress-bar div { 
+    height: 100%; 
+    background-color: var(--primary); 
+}
+
+/* Grid de 2 colunas */
+.grid-2 { 
+    display: grid; 
+    grid-template-columns: repeat(2, 1fr); 
+    gap: 1.5rem; 
+}
+
+/* Grid de 4 colunas */
+.grid-4 { 
+    display: grid; 
+    grid-template-columns: repeat(4, 1fr); 
+    gap: 1.5rem; 
+    margin-bottom: 1.5rem; 
+}
+
+/* Tabela de dados */
 .data-table {
     width: 100%;
-    border-collapse: collapse;
+    border-collapse: collapse; /* Remove espaços entre bordas */
 }
+
+/* Células da tabela */
 .data-table th, .data-table td {
     padding: .75rem 1rem;
-    border-bottom: 1px solid var(--border);
+    border-bottom: 1px solid var(--border); /* Linhas divisórias */
     text-align: left;
 }
-.data-table th { font-weight: 600; color: var(--muted-foreground); font-size: .9rem; }
 
+/* Cabeçalho da tabela */
+.data-table th { 
+    font-weight: 600; 
+    color: var(--muted-foreground); 
+    font-size: .9rem; 
+}
+
+/* Componente badge/etiqueta */
 .badge {
     display: inline-block;
     padding: .25rem .75rem;
-    border-radius: 9999px;
+    border-radius: 9999px; /* Completamente arredondado */
     font-size: .8rem;
     font-weight: 500;
     background-color: #e2e8f0;
     color: #334155;
 }
-.badge-success { background-color: #dcfce7; color: #166534; }
-.badge-danger { background-color: #fee2e2; color: #991b1b; }
+
+/* Variante de sucesso do badge */
+.badge-success { 
+    background-color: #dcfce7; 
+    color: #166534; 
+}
+
+/* Variante de perigo/erro do badge */
+.badge-danger { 
+    background-color: #fee2e2; 
+    color: #991b1b; 
+}

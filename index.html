@@ -1,37 +1,66 @@
 <!DOCTYPE html>
+<!-- Define o documento como HTML5 -->
 <html lang="pt-BR">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sistema Acadêmico</title>
+    <!-- Configurações meta e links para recursos externos -->
+    <meta charset="UTF-8"> <!-- Define codificação de caracteres para suportar português -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"> <!-- Responsividade para dispositivos móveis -->
+    <title>Sistema Acadêmico</title> <!-- Título da página na aba do navegador -->
+    
+    <!-- Link para o arquivo CSS customizado -->
     <link rel="stylesheet" href="style.css">
+    
+    <!-- Importa a biblioteca Chart.js para criação de gráficos -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
 <body>
+    <!-- Container principal da aplicação -->
     <div id="app">
+        
+        <!-- === TELA DE LOGIN === -->
+        <!-- View de login - inicialmente ativa (class="active") -->
         <div id="login-view" class="view active">
             <div class="login-container">
                 <div class="card">
+                    <!-- Cabeçalho do card de login -->
                     <div class="card-header">
+                        <!-- Logo com ícone de capelo de formatura -->
                         <div class="logo">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-graduation-cap"><path d="M22 10v6M2 10l10-5 10 5-10 5z"/><path d="M6 12v5c3 3 9 3 12 0v-5"/></svg>
+                            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-graduation-cap">
+                                <path d="M22 10v6M2 10l10-5 10 5-10 5z"/>
+                                <path d="M6 12v5c3 3 9 3 12 0v-5"/>
+                            </svg>
                         </div>
+                        <!-- Título do sistema -->
                         <h1 class="card-title">Sistema Acadêmico</h1>
+                        <!-- Descrição do sistema -->
                         <p class="card-description">Controle de Faltas e Notas</p>
                     </div>
+                    
+                    <!-- Conteúdo do card de login -->
                     <div class="card-content">
+                        <!-- Formulário de login -->
                         <form id="login-form">
+                            <!-- Grupo do campo email -->
                             <div class="form-group">
                                 <label for="email">Email</label>
+                                <!-- Input de email com valor pré-preenchido para testes -->
                                 <input type="email" id="email" value="admin@exemplo.com" required>
                             </div>
+                            <!-- Grupo do campo senha -->
                             <div class="form-group">
                                 <label for="password">Senha</label>
+                                <!-- Input de senha com valor pré-preenchido para testes -->
                                 <input type="password" id="password" value="123456" required>
                             </div>
+                            <!-- Botão de submit do formulário -->
                             <button type="submit" class="btn btn-primary">Entrar</button>
                         </form>
+                        
+                        <!-- Elemento para exibir mensagens de erro de login -->
                         <p id="login-error" class="error-message"></p>
+                         
+                         <!-- Área com dados de teste para facilitar o desenvolvimento -->
                          <div class="test-data">
                             <p>Dados de teste:</p>
                             <p>Email: admin@exemplo.com</p>
@@ -42,11 +71,18 @@
             </div>
         </div>
 
+        <!-- === APLICAÇÃO PRINCIPAL === -->
+        <!-- View principal da aplicação - inicialmente escondida -->
         <div id="main-view" class="view">
+            <!-- Sidebar (menu lateral) - conteúdo será injetado via JavaScript -->
             <aside class="sidebar" id="sidebar-container"></aside>
+            
+            <!-- Área de conteúdo principal - conteúdo será injetado via JavaScript -->
             <main class="main-content" id="main-content-container"></main>
         </div>
     </div>
+    
+    <!-- Script JavaScript da aplicação -->
     <script src="script.js"></script>
 </body>
 </html>

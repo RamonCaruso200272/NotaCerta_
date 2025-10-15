@@ -1,12 +1,43 @@
+// Aguarda o carregamento completo do DOM antes de executar o código
 document.addEventListener('DOMContentLoaded', () => {
-    // --- MOCK DATA ---
-    const mockSubjects = [
-        { id: '1', name: 'Matemática Aplicada', code: 'MAT001', professor: 'Prof. Ana Santos', credits: 4, schedule: 'Seg/Qua 14:00-16:00' },
-        { id: '2', name: 'Programação Web', code: 'PRG002', professor: 'Prof. Carlos Lima', credits: 6, schedule: 'Ter/Qui 08:00-10:00' },
-        { id: '3', name: 'Banco de Dados', code: 'BDD003', professor: 'Prof. Maria Silva', credits: 4, schedule: 'Sex 14:00-18:00' },
-        { id: '4', name: 'Engenharia de Software', code: 'ENG004', professor: 'Prof. João Oliveira', credits: 5, schedule: 'Seg/Qua 08:00-10:00' }
-    ];
+    let Materia = [];// Array para armazenar as matérias cadastradas
+    // Função para cadastrar nova matéria
+    function CadastrarMateria() {
+        const nomeMateria = document.getElementById('nomeMateria').value; // Obtém valor do campo nomeMateria
+        const cadCodigo = document.getElementById('cadCodigo').value; // Obtém valor do campo cadCodigo
+        const cadProfessor = document.getElementById('cadProfessor').value; // Obtém valor do campo cadProfessor
+        const cadCreditos = document.getElementById('cadCreditos').value; // Obtém valor do campo cadCreditos
+        const cadHorario = document.getElementById('cadHorario').value; // Obtém valor do campo cadHorario
+        // Valida se todos os campos foram preenchidos
+        if (nomeMateria && cadCodigo && cadProfessor && cadCreditos && cadHorario) {
+            const newSubject = {
+                id: (state.subjects.length + 1).toString(), // Gera um ID simples baseado no tamanho do array
+                name: nomeMateria,
+                code: cadCodigo,
+                professor: cadProfessor,
+                credits: parseInt(cadCreditos),
+                schedule: cadHorario
+             };
 
+            // Adiciona a nova matéria ao estado
+            state.subjects.push(newSubject);
+            Materia.push(newSubject); // Adiciona a nova matéria ao array Materia
+            // Limpa os campos do formulário
+            document.getElementById('nomeMateria').value = '';
+            document.getElementById('cadCodigo').value = '';
+            document.getElementById('cadProfessor').value = '';
+            document.getElementById('cadCreditos').value = '';
+            document.getElementById('cadHorario').value = '';
+        } else {
+            alert('Por favor, preencha todos os campos.');
+        }
+        
+        console.log('Materias cadastradas: ', Materia); // Exibe o array atualizado no console (para verificação)
+
+    }
+   
+
+    // Array de registros de presença fictícios
     const mockAttendance = [
         { id: '1', subjectId: '1', date: '2024-01-15', present: true },
         { id: '2', subjectId: '1', date: '2024-01-17', present: false, justification: 'Consulta médica' },
@@ -16,6 +47,7 @@ document.addEventListener('DOMContentLoaded', () => {
         { id: '6', subjectId: '4', date: '2024-01-15', present: true },
     ];
 
+    // Array de notas fictícias
     const mockGrades = [
         { id: '1', subjectId: '1', activityName: 'Prova 1', weight: 3, score: 8.5, maxScore: 10, date: '2024-01-20' },
         { id: '2', subjectId: '1', activityName: 'Trabalho 1', weight: 2, score: 9.0, maxScore: 10, date: '2024-01-25' },
@@ -24,17 +56,21 @@ document.addEventListener('DOMContentLoaded', () => {
         { id: '5', subjectId: '3', activityName: 'Modelagem ER', weight: 2, score: 8.2, maxScore: 10, date: '2024-02-10' }
     ];
 
-    // --- STATE MANAGEMENT ---
+    // --- GERENCIAMENTO DE ESTADO ---
+    
+    // Objeto que armazena o estado global da aplicação
     let state = {
-        isAuthenticated: false,
-        currentView: 'dashboard',
-        user: null,
-        subjects: mockSubjects,
-        attendance: mockAttendance,
-        grades: mockGrades
+        isAuthenticated: false, // Controla se usuário está autenticado
+        currentView: 'dashboard', // Tela atual sendo exibida
+        user: null, // Dados do usuário logado
+        subjects: Materia, // Lista de disciplinas
+        attendance: mockAttendance, // Registros de presença
+        grades: mockGrades // Notas do usuário
     };
 
-    // --- DOM ELEMENTS ---
+    // --- ELEMENTOS DO DOM ---
+    
+    // Seleciona os elementos principais da interface
     const loginView = document.getElementById('login-view');
     const mainView = document.getElementById('main-view');
     const sidebarContainer = document.getElementById('sidebar-container');
@@ -42,38 +78,50 @@ document.addEventListener('DOMContentLoaded', () => {
     const loginForm = document.getElementById('login-form');
     const loginError = document.getElementById('login-error');
 
-    // --- AUTHENTICATION ---
+    // --- SISTEMA DE AUTENTICAÇÃO ---
+    
+    // Função para realizar login
     function login(email, password) {
+        // Verifica credenciais fixas (em um sistema real, isso viria de um backend)
         if (email === 'admin@exemplo.com' && password === '123456') {
             state.isAuthenticated = true;
             state.user = { name: 'João Silva', email: 'admin@exemplo.com', avatar: 'https://github.com/shadcn.png' };
+            // Salva estado no localStorage para persistência
             localStorage.setItem('authState', JSON.stringify(state));
             renderApp();
         } else {
+            // Exibe mensagem de erro para credenciais inválidas
             loginError.textContent = 'Email ou senha incorretos.';
         }
     }
 
+    // Função para realizar logout
     function logout() {
         state.isAuthenticated = false;
         state.user = null;
+        // Remove dados de autenticação do localStorage
         localStorage.removeItem('authState');
         renderApp();
     }
     
-    // --- RENDERING ---
+    // --- SISTEMA DE RENDERIZAÇÃO ---
+    
+    // Função principal que controla o que é exibido na tela
     function renderApp() {
         if (state.isAuthenticated) {
+            // Se autenticado, mostra a aplicação principal
             loginView.classList.remove('active');
             mainView.classList.add('active');
             renderSidebar();
             renderMainContent();
         } else {
+            // Se não autenticado, mostra tela de login
             loginView.classList.add('active');
             mainView.classList.remove('active');
         }
     }
 
+    // Renderiza a barra lateral com menu de navegação
     function renderSidebar() {
         sidebarContainer.innerHTML = `
             <div class="sidebar-header">
@@ -103,17 +151,21 @@ document.addEventListener('DOMContentLoaded', () => {
             <button id="logout-btn" class="btn btn-logout">Sair</button>
         `;
 
+        // Adiciona event listeners aos botões de navegação
         sidebarContainer.querySelectorAll('.nav-btn').forEach(btn => {
             btn.addEventListener('click', () => {
                 state.currentView = btn.dataset.view;
                 renderApp();
             });
         });
+        // Adiciona event listener ao botão de logout
         document.getElementById('logout-btn').addEventListener('click', logout);
     }
     
+    // Renderiza o conteúdo principal baseado na view atual
     function renderMainContent() {
         mainContentContainer.innerHTML = '';
+        // Switch para determinar qual tela renderizar
         switch (state.currentView) {
             case 'dashboard':
                 renderDashboard();
@@ -136,12 +188,15 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
+    // Renderiza o dashboard com estatísticas e gráficos
     function renderDashboard() {
+        // Calcula estatísticas
         const totalSubjects = state.subjects.length;
         const totalClasses = state.attendance.length;
         const presentClasses = state.attendance.filter(a => a.present).length;
         const attendanceRate = totalClasses > 0 ? Math.round((presentClasses / totalClasses) * 100) : 0;
         
+        // Calcula médias por disciplina
         const subjectAverages = state.subjects.map(subject => {
             const subjectGrades = state.grades.filter(g => g.subjectId === subject.id);
             if (subjectGrades.length === 0) return { name: subject.name, average: 0 };
@@ -150,8 +205,10 @@ document.addEventListener('DOMContentLoaded', () => {
             return { name: subject.name, average: totalWeight > 0 ? (weightedSum / totalWeight).toFixed(1) : 0 };
         });
 
+        // Calcula média geral
         const overallAverage = (subjectAverages.reduce((sum, s) => sum + parseFloat(s.average), 0) / subjectAverages.length).toFixed(1);
 
+        // Gera HTML do dashboard
         mainContentContainer.innerHTML = `
             <div class="header">
                 <h1>Dashboard</h1>
@@ -198,15 +255,17 @@ document.addEventListener('DOMContentLoaded', () => {
             </div>
         `;
         
-        // Chart rendering
+        // Renderização de gráficos
         const absencesCtx = document.getElementById('absencesChart').getContext('2d');
         const gradesCtx = document.getElementById('gradesChart').getContext('2d');
 
+        // Prepara dados para gráfico de faltas
         const absencesData = state.subjects.map(s => ({
             name: s.name,
             absences: state.attendance.filter(a => a.subjectId === s.id && !a.present).length
         }));
 
+        // Gráfico de pizza para faltas
         new Chart(absencesCtx, {
             type: 'pie',
             data: {
@@ -219,6 +278,7 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         });
 
+        // Gráfico de barras para médias
         new Chart(gradesCtx, {
             type: 'bar',
             data: {
@@ -235,11 +295,21 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
+    // Renderiza o gerenciador de disciplinas
     function renderSubjectsManager() {
         mainContentContainer.innerHTML = `
             <div class="header">
                 <h1>Matérias</h1>
+                <h2>Cadastrar novas matérias</h2>
                 <p>Gerencie suas disciplinas do semestre</p>
+            </div>
+            <div class="form-group">
+                <input type="text" id="nomeMateria" placeholder="Nome da Matéria">
+                <input type="text" id="cadCodigo" placeholder="Código da Matéria">
+                <input type="text" id="cadProfessor" placeholder="Nome do Professor">
+                <input type="number" id="cadCreditos" placeholder="Créditos">
+                <input type="datetime-local" id="cadHorario" placeholder="Horário">
+                <button id="btn-adicionar-materia">Adicionar</button>
             </div>
             <div class="card">
                 <div class="card-content">
@@ -268,17 +338,30 @@ document.addEventListener('DOMContentLoaded', () => {
                 </div>
             </div>
         `;
+        document.getElementById('btn-adicionar-materia').addEventListener('click', CadastrarMateria);
     }
 
+    // Renderiza o gerenciador de presenças
     function renderAttendanceManager() {
         mainContentContainer.innerHTML = `
             <div class="header">
                 <h1>Controle de Faltas</h1>
                 <p>Gerencie sua presença nas aulas</p>
             </div>
+
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="card-title">Registrar Presença / Falta</h3>
+                </div>
+                <div class="card-content" id="attendance-actions">
+                    <button id="btn-add-attendance" class="btn btn-primary">+ Adicionar aula</button>
+                    <div id="attendance-form-wrapper" style="margin-top:1rem; display:none;"></div>
+                </div>
+            </div>
+
             <div class="card">
                 <div class="card-content">
-                    <table class="data-table">
+                    <table class="data-table" id="attendance-table">
                         <thead>
                             <tr>
                                 <th>Data</th>
@@ -305,6 +388,79 @@ document.addEventListener('DOMContentLoaded', () => {
                 </div>
             </div>
         `;
+
+        document.getElementById('btn-add-attendance').addEventListener('click', () => {
+            openAttendanceForm();
+        });
+    }
+
+    function openAttendanceForm() {
+        const wrapper = document.getElementById('attendance-form-wrapper');
+        // form HTML
+        wrapper.innerHTML = `
+            <div class="card" style="padding:0.75rem;">
+                <div class="card-content">
+                    <div class="form-group">
+                        <label for="attendance-subject">Matéria</label>
+                        <select id="attendance-subject">
+                            ${state.subjects.map(s => `<option value="${s.id}">${s.name}</option>`).join('')}
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="attendance-date">Data</label>
+                        <input type="date" id="attendance-date" value="${new Date().toISOString().slice(0,10)}">
+                    </div>
+                    <div class="form-group">
+                        <label for="attendance-status">Status</label>
+                        <select id="attendance-status">
+                            <option value="present">Presente</option>
+                            <option value="absent">Falta</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="attendance-justification">Justificativa (opcional)</label>
+                        <input type="text" id="attendance-justification" placeholder="Ex: Consulta médica">
+                    </div>
+                    <div style="display:flex;gap:0.5rem;">
+                        <button id="attendance-save" class="btn btn-primary">Salvar</button>
+                        <button id="attendance-cancel" class="btn">Cancelar</button>
+                    </div>
+                </div>
+            </div>
+        `;
+        wrapper.style.display = 'block';
+
+        document.getElementById('attendance-cancel').addEventListener('click', () => {
+            wrapper.style.display = 'none';
+            wrapper.innerHTML = '';
+        });
+
+        document.getElementById('attendance-save').addEventListener('click', () => {
+            const subjectId = document.getElementById('attendance-subject').value;
+            const date = document.getElementById('attendance-date').value;
+            const status = document.getElementById('attendance-status').value;
+            const justification = document.getElementById('attendance-justification').value.trim();
+
+            if (!subjectId || !date) {
+                alert('Preencha a matéria e a data.');
+                return;
+            }
+
+            const newRecord = {
+                id: String(Date.now()),
+                subjectId,
+                date,
+                present: status === 'present',
+                justification: justification || undefined
+            };
+
+            state.attendance.push(newRecord);
+            saveState();
+            // syncToAWS({ type: 'attendance_create', payload: newRecord }); // descomente quando tiver endpoint
+            // re-render
+            renderApp();
+            // auto-close (já acontece ao re-renderizar)
+        });
     }
 
     function renderGradesManager() {
@@ -313,9 +469,20 @@ document.addEventListener('DOMContentLoaded', () => {
                 <h1>Controle de Notas</h1>
                 <p>Gerencie suas notas e acompanhe seu desempenho</p>
             </div>
+
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="card-title">Registrar Nota</h3>
+                </div>
+                <div class="card-content" id="grades-actions">
+                    <button id="btn-add-grade" class="btn btn-primary">+ Adicionar nota</button>
+                    <div id="grade-form-wrapper" style="margin-top:1rem; display:none;"></div>
+                </div>
+            </div>
+
             <div class="card">
                 <div class="card-content">
-                    <table class="data-table">
+                    <table class="data-table" id="grades-table">
                         <thead>
                             <tr>
                                 <th>Data</th>
@@ -345,8 +512,88 @@ document.addEventListener('DOMContentLoaded', () => {
                 </div>
             </div>
         `;
+
+        document.getElementById('btn-add-grade').addEventListener('click', () => {
+            openGradeForm();
+        });
     }
 
+    function openGradeForm() {
+        const wrapper = document.getElementById('grade-form-wrapper');
+        wrapper.innerHTML = `
+            <div class="card" style="padding:0.75rem;">
+                <div class="card-content">
+                    <div class="form-group">
+                        <label for="grade-subject">Matéria</label>
+                        <select id="grade-subject">
+                            ${state.subjects.map(s => `<option value="${s.id}">${s.name}</option>`).join('')}
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="grade-activity">Atividade</label>
+                        <input type="text" id="grade-activity" placeholder="Ex: Prova 2">
+                    </div>
+                    <div class="form-group">
+                        <label for="grade-weight">Peso</label>
+                        <input type="number" id="grade-weight" min="0" value="1">
+                    </div>
+                    <div class="form-group">
+                        <label for="grade-score">Nota obtida</label>
+                        <input type="number" id="grade-score" step="0.01" min="0" value="0">
+                    </div>
+                    <div class="form-group">
+                        <label for="grade-maxscore">Nota máxima</label>
+                        <input type="number" id="grade-maxscore" step="0.01" min="0.01" value="10">
+                    </div>
+                    <div class="form-group">
+                        <label for="grade-date">Data</label>
+                        <input type="date" id="grade-date" value="${new Date().toISOString().slice(0,10)}">
+                    </div>
+                    <div style="display:flex;gap:0.5rem;">
+                        <button id="grade-save" class="btn btn-primary">Salvar</button>
+                        <button id="grade-cancel" class="btn">Cancelar</button>
+                    </div>
+                </div>
+            </div>
+        `;
+        wrapper.style.display = 'block';
+
+        document.getElementById('grade-cancel').addEventListener('click', () => {
+            wrapper.style.display = 'none';
+            wrapper.innerHTML = '';
+        });
+
+        document.getElementById('grade-save').addEventListener('click', () => {
+            const subjectId = document.getElementById('grade-subject').value;
+            const activityName = document.getElementById('grade-activity').value.trim();
+            const weight = Number(document.getElementById('grade-weight').value);
+            const score = Number(document.getElementById('grade-score').value);
+            const maxScore = Number(document.getElementById('grade-maxscore').value);
+            const date = document.getElementById('grade-date').value;
+
+            if (!subjectId || !activityName || !date || !maxScore || maxScore <= 0) {
+                alert('Preencha os campos obrigatórios corretamente.');
+                return;
+            }
+
+            const newGrade = {
+                id: String(Date.now()),
+                subjectId,
+                activityName,
+                weight: isNaN(weight) ? 1 : weight,
+                score: isNaN(score) ? 0 : score,
+                maxScore: isNaN(maxScore) ? 10 : maxScore,
+                date
+            };
+
+            state.grades.push(newGrade);
+            saveState();
+            // syncToAWS({ type: 'grade_create', payload: newGrade }); // descomente quando tiver endpoint
+            renderApp();
+        });
+    }
+
+    // Renderiza a tela de relatórios
     function renderReports() {
         mainContentContainer.innerHTML = `
             <div class="header">
@@ -363,6 +610,7 @@ document.addEventListener('DOMContentLoaded', () => {
         `;
     }
 
+    // Renderiza a tela de configurações
     function renderSettings() {
         mainContentContainer.innerHTML = `
             <div class="header">
@@ -392,7 +640,9 @@ document.addEventListener('DOMContentLoaded', () => {
         `;
     }
 
-    // --- EVENT LISTENERS ---
+    // --- CONFIGURAÇÃO DE EVENT LISTENERS ---
+    
+    // Event listener para o formulário de login
     loginForm.addEventListener('submit', (e) => {
         e.preventDefault();
         const email = document.getElementById('email').value;
@@ -400,7 +650,9 @@ document.addEventListener('DOMContentLoaded', () => {
         login(email, password);
     });
 
-    // --- INITIALIZATION ---
+    // --- INICIALIZAÇÃO DA APLICAÇÃO ---
+    
+    // Verifica se há estado salvo no localStorage
     const savedState = localStorage.getItem('authState');
     if (savedState) {
         const parsedState = JSON.parse(savedState);
@@ -408,5 +660,6 @@ document.addEventListener('DOMContentLoaded', () => {
             state = parsedState;
         }
     }
+    // Renderiza a aplicação pela primeira vez
     renderApp();
 });
