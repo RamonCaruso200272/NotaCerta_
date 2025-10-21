@@ -1,41 +1,48 @@
 // Aguarda o carregamento completo do DOM antes de executar o código
 document.addEventListener('DOMContentLoaded', () => {
-    let Materia = [];// Array para armazenar as matérias cadastradas
-    // Função para cadastrar nova matéria
+    let Materia = []; // Array para armazenar as matérias cadastradas
+
+    // FUNÇÃO PARA CADASTRAR NOVA MATÉRIA
     function CadastrarMateria() {
-        const nomeMateria = document.getElementById('nomeMateria').value; // Obtém valor do campo nomeMateria
-        const cadCodigo = document.getElementById('cadCodigo').value; // Obtém valor do campo cadCodigo
-        const cadProfessor = document.getElementById('cadProfessor').value; // Obtém valor do campo cadProfessor
-        const cadCreditos = document.getElementById('cadCreditos').value; // Obtém valor do campo cadCreditos
-        const cadHorario = document.getElementById('cadHorario').value; // Obtém valor do campo cadHorario
+        // Obtém valores dos campos do formulário
+        const nomeMateria = document.getElementById('nomeMateria').value;
+        const cadCodigo = document.getElementById('cadCodigo').value;
+        const cadProfessor = document.getElementById('cadProfessor').value;
+        const cadCreditos = document.getElementById('cadCreditos').value;
+        const cadHorario = document.getElementById('cadHorario').value;
+
         // Valida se todos os campos foram preenchidos
         if (nomeMateria && cadCodigo && cadProfessor && cadCreditos && cadHorario) {
+            // Cria novo objeto de matéria
             const newSubject = {
-                id: (state.subjects.length + 1).toString(), // Gera um ID simples baseado no tamanho do array
+                id: (state.subjects.length + 1).toString(), // Gera ID sequencial
                 name: nomeMateria,
                 code: cadCodigo,
                 professor: cadProfessor,
                 credits: parseInt(cadCreditos),
                 schedule: cadHorario
-             };
+            };
 
-            // Adiciona a nova matéria ao estado
+            // Adiciona a nova matéria ao estado global e ao array local
             state.subjects.push(newSubject);
-            Materia.push(newSubject); // Adiciona a nova matéria ao array Materia
-            // Limpa os campos do formulário
+            Materia.push(newSubject);
+
+            // Limpa os campos do formulário após cadastro
             document.getElementById('nomeMateria').value = '';
             document.getElementById('cadCodigo').value = '';
             document.getElementById('cadProfessor').value = '';
             document.getElementById('cadCreditos').value = '';
             document.getElementById('cadHorario').value = '';
         } else {
+            // Alerta se algum campo estiver vazio
             alert('Por favor, preencha todos os campos.');
         }
-        
-        console.log('Materias cadastradas: ', Materia); // Exibe o array atualizado no console (para verificação)
 
+        // Exibe no console para debug (pode ser removido em produção)
+        console.log('Materias cadastradas: ', Materia);
     }
-   
+
+    // DADOS MOCK (FICTÍCIOS) PARA TESTES
 
     // Array de registros de presença fictícios
     const mockAttendance = [
@@ -56,8 +63,8 @@ document.addEventListener('DOMContentLoaded', () => {
         { id: '5', subjectId: '3', activityName: 'Modelagem ER', weight: 2, score: 8.2, maxScore: 10, date: '2024-02-10' }
     ];
 
-    // --- GERENCIAMENTO DE ESTADO ---
-    
+    // --- GERENCIAMENTO DE ESTADO DA APLICAÇÃO ---
+
     // Objeto que armazena o estado global da aplicação
     let state = {
         isAuthenticated: false, // Controla se usuário está autenticado
@@ -68,8 +75,8 @@ document.addEventListener('DOMContentLoaded', () => {
         grades: mockGrades // Notas do usuário
     };
 
-    // --- ELEMENTOS DO DOM ---
-    
+    // --- SELEÇÃO DE ELEMENTOS DO DOM ---
+
     // Seleciona os elementos principais da interface
     const loginView = document.getElementById('login-view');
     const mainView = document.getElementById('main-view');
@@ -79,13 +86,17 @@ document.addEventListener('DOMContentLoaded', () => {
     const loginError = document.getElementById('login-error');
 
     // --- SISTEMA DE AUTENTICAÇÃO ---
-    
+
     // Função para realizar login
     function login(email, password) {
-        // Verifica credenciais fixas (em um sistema real, isso viria de um backend)
+        // Verifica credenciais fixas (em sistema real, viria de backend)
         if (email === 'admin@exemplo.com' && password === '123456') {
             state.isAuthenticated = true;
-            state.user = { name: 'João Silva', email: 'admin@exemplo.com', avatar: 'https://github.com/shadcn.png' };
+            state.user = { 
+                name: 'João Silva', 
+                email: 'admin@exemplo.com', 
+                avatar: 'https://github.com/shadcn.png' 
+            };
             // Salva estado no localStorage para persistência
             localStorage.setItem('authState', JSON.stringify(state));
             renderApp();
@@ -103,9 +114,9 @@ document.addEventListener('DOMContentLoaded', () => {
         localStorage.removeItem('authState');
         renderApp();
     }
-    
-    // --- SISTEMA DE RENDERIZAÇÃO ---
-    
+
+    // --- SISTEMA DE RENDERIZAÇÃO DA INTERFACE ---
+
     // Função principal que controla o que é exibido na tela
     function renderApp() {
         if (state.isAuthenticated) {
@@ -158,14 +169,16 @@ document.addEventListener('DOMContentLoaded', () => {
                 renderApp();
             });
         });
+
         // Adiciona event listener ao botão de logout
         document.getElementById('logout-btn').addEventListener('click', logout);
     }
-    
+
     // Renderiza o conteúdo principal baseado na view atual
     function renderMainContent() {
         mainContentContainer.innerHTML = '';
-        // Switch para determinar qual tela renderizar
+        
+        // Switch para determinar qual tela renderizar baseado na view atual
         switch (state.currentView) {
             case 'dashboard':
                 renderDashboard();
@@ -190,7 +203,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Renderiza o dashboard com estatísticas e gráficos
     function renderDashboard() {
-        // Calcula estatísticas
+        // Calcula estatísticas para exibir no dashboard
         const totalSubjects = state.subjects.length;
         const totalClasses = state.attendance.length;
         const presentClasses = state.attendance.filter(a => a.present).length;
@@ -202,10 +215,13 @@ document.addEventListener('DOMContentLoaded', () => {
             if (subjectGrades.length === 0) return { name: subject.name, average: 0 };
             const weightedSum = subjectGrades.reduce((sum, grade) => sum + (grade.score * grade.weight), 0);
             const totalWeight = subjectGrades.reduce((sum, grade) => sum + grade.weight, 0);
-            return { name: subject.name, average: totalWeight > 0 ? (weightedSum / totalWeight).toFixed(1) : 0 };
+            return { 
+                name: subject.name, 
+                average: totalWeight > 0 ? (weightedSum / totalWeight).toFixed(1) : 0 
+            };
         });
 
-        // Calcula média geral
+        // Calcula média geral de todas as disciplinas
         const overallAverage = (subjectAverages.reduce((sum, s) => sum + parseFloat(s.average), 0) / subjectAverages.length).toFixed(1);
 
         // Gera HTML do dashboard
@@ -255,7 +271,7 @@ document.addEventListener('DOMContentLoaded', () => {
             </div>
         `;
         
-        // Renderização de gráficos
+        // Renderização de gráficos usando Chart.js
         const absencesCtx = document.getElementById('absencesChart').getContext('2d');
         const gradesCtx = document.getElementById('gradesChart').getContext('2d');
 
@@ -265,7 +281,7 @@ document.addEventListener('DOMContentLoaded', () => {
             absences: state.attendance.filter(a => a.subjectId === s.id && !a.present).length
         }));
 
-        // Gráfico de pizza para faltas
+        // Gráfico de pizza para mostrar distribuição de faltas por matéria
         new Chart(absencesCtx, {
             type: 'pie',
             data: {
@@ -278,7 +294,7 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         });
 
-        // Gráfico de barras para médias
+        // Gráfico de barras para mostrar médias por matéria
         new Chart(gradesCtx, {
             type: 'bar',
             data: {
@@ -290,7 +306,12 @@ document.addEventListener('DOMContentLoaded', () => {
                 }]
             },
             options: {
-                scales: { y: { beginAtZero: true, max: 10 } }
+                scales: { 
+                    y: { 
+                        beginAtZero: true, 
+                        max: 10 // Escala de 0 a 10 para notas
+                    } 
+                }
             }
         });
     }
@@ -300,17 +321,19 @@ document.addEventListener('DOMContentLoaded', () => {
         mainContentContainer.innerHTML = `
             <div class="header">
                 <h1>Matérias</h1>
-                <h2>Cadastrar novas matérias</h2>
                 <p>Gerencie suas disciplinas do semestre</p>
             </div>
-            <div class="form-group">
-                <input type="text" id="nomeMateria" placeholder="Nome da Matéria">
-                <input type="text" id="cadCodigo" placeholder="Código da Matéria">
-                <input type="text" id="cadProfessor" placeholder="Nome do Professor">
-                <input type="number" id="cadCreditos" placeholder="Créditos">
-                <input type="datetime-local" id="cadHorario" placeholder="Horário">
-                <button id="btn-adicionar-materia">Adicionar</button>
+             <div class="card">
+                <div class="card-header">
+                    <h3 class="card-title">Adicionar Matéria</h3>
+                </div>
+                <div class="card-content" id="add-subject-form">
+                    <button id="btn-open-add-subject" class="btn btn-primary">+ Nova Matéria</button>
+                    <div id="add-subject-form-wrapper" style="margin-top:1rem; display:none;">
+                </div>
+
             </div>
+        
             <div class="card">
                 <div class="card-content">
                     <table class="data-table">
@@ -338,8 +361,60 @@ document.addEventListener('DOMContentLoaded', () => {
                 </div>
             </div>
         `;
-        document.getElementById('btn-adicionar-materia').addEventListener('click', CadastrarMateria);
+        // Adiciona event listener ao botão de abrir formulário
+        document.getElementById('btn-open-add-subject').addEventListener('click', () => {
+            abreformulario();
+            // Adiciona event listener ao botão de adicionar matéria
+            document.getElementById('btn-adicionar-materia').addEventListener('click', () => {
+                CadastrarMateria();
+                renderApp(); // Re-renderiza a aplicação para atualizar a lista de matérias
+            });
+        });
     }
+
+    function abreformulario() {
+        const formWrapper = document.getElementById('add-subject-form-wrapper');
+        formWrapper.innerHTML = `
+            <div class="card" style="padding:0.75rem;">
+                <div class="card-content">
+                    <div class="form-group">
+                        <label for="nomeMateria">Nome da Matéria</label>
+                        <input type="text" id="nomeMateria" placeholder="Ex: Matemática">
+                    </div>
+                    <div class="form-group">
+                        <label for="cadCodigo">Código da Matéria</label>
+                        <input type="text" id="cadCodigo" placeholder="Ex: MAT101">
+                    </div>
+                    <div class="form-group">
+                        <label for="cadProfessor">Nome do Professor</label>
+                        <input type="text" id="cadProfessor" placeholder="Ex: Dr. Silva">
+                    </div>
+                    <div class="form-group">
+                        <label for="cadCreditos">Créditos</label>
+                        <input type="number" id="cadCreditos" min="1" placeholder="Ex: 4">
+                    </div>
+                    <div class="form-group">
+                        <label for="cadHorario">Horário</label>
+                        <input type="text" id="cadHorario" placeholder="Ex: Seg 10:00-12:00">
+                    </div>
+                    <div style="display:flex;gap:0.5rem;">
+                        <button id="btn-adicionar-materia" class="btn btn-primary">Adicionar</button>
+                        <button id="btn-cancelar-materia" class="btn">Cancelar</button>
+                    </div>
+                </div>
+            </div>
+        `;
+        formWrapper.style.display = 'block'; // Mostra o formulário
+
+        // Event listener para cancelar
+        document.getElementById('btn-cancelar-materia').addEventListener('click', () => {
+            formWrapper.style.display = 'none';
+            formWrapper.innerHTML = '';
+        });
+        
+    }
+
+    
 
     // Renderiza o gerenciador de presenças
     function renderAttendanceManager() {
@@ -357,7 +432,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     <button id="btn-add-attendance" class="btn btn-primary">+ Adicionar aula</button>
                     <div id="attendance-form-wrapper" style="margin-top:1rem; display:none;"></div>
                 </div>
-            </div>
+            </div>CadrMateria
 
             <div class="card">
                 <div class="card-content">
@@ -389,14 +464,17 @@ document.addEventListener('DOMContentLoaded', () => {
             </div>
         `;
 
+        // Adiciona event listener ao botão de adicionar presença
         document.getElementById('btn-add-attendance').addEventListener('click', () => {
             openAttendanceForm();
         });
     }
 
+    // Abre o formulário para adicionar novo registro de presença
     function openAttendanceForm() {
         const wrapper = document.getElementById('attendance-form-wrapper');
-        // form HTML
+        
+        // HTML do formulário de presença
         wrapper.innerHTML = `
             <div class="card" style="padding:0.75rem;">
                 <div class="card-content">
@@ -428,41 +506,43 @@ document.addEventListener('DOMContentLoaded', () => {
                 </div>
             </div>
         `;
-        wrapper.style.display = 'block';
+        wrapper.style.display = 'block'; // Mostra o formulário
 
+        // Event listener para cancelar
         document.getElementById('attendance-cancel').addEventListener('click', () => {
             wrapper.style.display = 'none';
             wrapper.innerHTML = '';
         });
 
+        // Event listener para salvar
         document.getElementById('attendance-save').addEventListener('click', () => {
             const subjectId = document.getElementById('attendance-subject').value;
             const date = document.getElementById('attendance-date').value;
             const status = document.getElementById('attendance-status').value;
             const justification = document.getElementById('attendance-justification').value.trim();
 
+            // Validação dos campos obrigatórios
             if (!subjectId || !date) {
                 alert('Preencha a matéria e a data.');
                 return;
             }
 
+            // Cria novo registro de presença
             const newRecord = {
-                id: String(Date.now()),
+                id: String(Date.now()), // ID baseado no timestamp
                 subjectId,
                 date,
                 present: status === 'present',
                 justification: justification || undefined
             };
 
+            // Adiciona ao estado e renderiza novamente
             state.attendance.push(newRecord);
-            saveState();
-            // syncToAWS({ type: 'attendance_create', payload: newRecord }); // descomente quando tiver endpoint
-            // re-render
             renderApp();
-            // auto-close (já acontece ao re-renderizar)
         });
     }
 
+    // Renderiza o gerenciador de notas
     function renderGradesManager() {
          mainContentContainer.innerHTML = `
             <div class="header">
@@ -495,6 +575,7 @@ document.addEventListener('DOMContentLoaded', () => {
                         </thead>
                         <tbody>
                             ${state.grades.sort((a,b) => new Date(b.date) - new Date(a.date)).map(g => {
+                                // Converte a nota para escala 0-10
                                 const convertedGrade = ((g.score / g.maxScore) * 10).toFixed(1);
                                 return `
                                     <tr>
@@ -513,11 +594,13 @@ document.addEventListener('DOMContentLoaded', () => {
             </div>
         `;
 
+        // Adiciona event listener ao botão de adicionar nota
         document.getElementById('btn-add-grade').addEventListener('click', () => {
             openGradeForm();
         });
     }
 
+    // Abre o formulário para adicionar nova nota
     function openGradeForm() {
         const wrapper = document.getElementById('grade-form-wrapper');
         wrapper.innerHTML = `
@@ -556,13 +639,15 @@ document.addEventListener('DOMContentLoaded', () => {
                 </div>
             </div>
         `;
-        wrapper.style.display = 'block';
+        wrapper.style.display = 'block'; // Mostra o formulário
 
+        // Event listener para cancelar
         document.getElementById('grade-cancel').addEventListener('click', () => {
             wrapper.style.display = 'none';
             wrapper.innerHTML = '';
         });
 
+        // Event listener para salvar
         document.getElementById('grade-save').addEventListener('click', () => {
             const subjectId = document.getElementById('grade-subject').value;
             const activityName = document.getElementById('grade-activity').value.trim();
@@ -571,13 +656,15 @@ document.addEventListener('DOMContentLoaded', () => {
             const maxScore = Number(document.getElementById('grade-maxscore').value);
             const date = document.getElementById('grade-date').value;
 
+            // Validação dos campos obrigatórios
             if (!subjectId || !activityName || !date || !maxScore || maxScore <= 0) {
                 alert('Preencha os campos obrigatórios corretamente.');
                 return;
             }
 
+            // Cria novo objeto de nota
             const newGrade = {
-                id: String(Date.now()),
+                id: String(Date.now()), // ID baseado no timestamp
                 subjectId,
                 activityName,
                 weight: isNaN(weight) ? 1 : weight,
@@ -586,9 +673,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 date
             };
 
+            // Adiciona ao estado e renderiza novamente
             state.grades.push(newGrade);
-            saveState();
-            // syncToAWS({ type: 'grade_create', payload: newGrade }); // descomente quando tiver endpoint
             renderApp();
         });
     }
@@ -641,25 +727,26 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // --- CONFIGURAÇÃO DE EVENT LISTENERS ---
-    
+
     // Event listener para o formulário de login
     loginForm.addEventListener('submit', (e) => {
-        e.preventDefault();
+        e.preventDefault(); // Previne comportamento padrão do formulário
         const email = document.getElementById('email').value;
         const password = document.getElementById('password').value;
-        login(email, password);
+        login(email, password); // Chama função de login
     });
 
     // --- INICIALIZAÇÃO DA APLICAÇÃO ---
-    
-    // Verifica se há estado salvo no localStorage
+
+    // Verifica se há estado salvo no localStorage (persistência de login)
     const savedState = localStorage.getItem('authState');
     if (savedState) {
         const parsedState = JSON.parse(savedState);
         if (parsedState.isAuthenticated) {
-            state = parsedState;
+            state = parsedState; // Restaura estado salvo
         }
     }
+    
     // Renderiza a aplicação pela primeira vez
     renderApp();
 });
