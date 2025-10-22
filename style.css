@@ -45,8 +45,9 @@ body {
     width: 100%; 
 }
 
-/* --- ESTILOS DA TELA DE LOGIN --- */
-#login-view {
+/* --- ESTILOS DA TELA DE LOGIN E REGISTRO --- */
+#login-view,
+#register-view {
     justify-content: center;  /* Centraliza horizontalmente */
     align-items: center;      /* Centraliza verticalmente */
 }
@@ -116,6 +117,7 @@ select {
     color: var(--danger); 
     margin-top: 1rem; 
     text-align: center;
+    min-height: 1.2em; /* Reserva espaço para a mensagem */
 }
 
 /* Área de dados de teste */
@@ -129,6 +131,19 @@ select {
     font-size: 0.9rem; 
     color: var(--muted-foreground); 
 }
+
+/* Link para alternar entre login/registro */
+.toggle-link {
+    color: var(--primary);
+    text-align: center;
+    margin-top: 1.5rem;
+    cursor: pointer;
+    font-size: 0.9rem;
+}
+.toggle-link:hover {
+    text-decoration: underline;
+}
+
 
 /* --- LAYOUT PRINCIPAL DA APLICAÇÃO --- */
 
