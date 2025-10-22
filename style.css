@@ -18,6 +18,7 @@
     --muted-foreground: #64748b;  /* Texto secundário - cinza azulado */
     --success: #22c55e;           /* Cor de sucesso - verde */
     --danger: #ef4444;            /* Cor de perigo/erro - vermelho */
+    --danger-foreground: #ffffff; /* Texto sobre fundo de perigo */
 }
 
 /* Estilos base do corpo da página */
@@ -97,13 +98,17 @@ label {
     font-weight: 500; 
 }
 
-/* Campos de input */
-input { 
+/* Campos de input e select */
+input,
+select { 
     width: 100%; 
     padding: .75rem; 
     border: 1px solid var(--border); 
     border-radius: .375rem; 
     font-size: 1rem; 
+    background-color: var(--card); /* Garante fundo branco para selects */
+    font-family: inherit; /* Herda a fonte do body */
+    color: inherit; /* Herda a cor do body */
 }
 
 /* Mensagem de erro */
@@ -135,6 +140,7 @@ input {
     padding: 1.5rem 1rem;
     display: flex;
     flex-direction: column; /* Layout vertical */
+    overflow-y: auto;
 }
 
 /* Área de conteúdo principal */
@@ -152,6 +158,7 @@ input {
     align-items: center; 
     gap: .75rem; /* Espaço entre elementos */
     padding: 0 0.5rem 1.5rem; 
+    flex-shrink: 0; /* Impede que o header encolha */
 }
 
 /* Remove margem do logo na sidebar */
@@ -168,6 +175,7 @@ input {
     padding: .75rem; 
     border-radius: .5rem; 
     margin-bottom: 1.5rem; 
+    flex-shrink: 0;
 }
 
 /* Avatar do usuário */
@@ -175,17 +183,20 @@ input {
     width: 40px; 
     height: 40px; 
     border-radius: 50%; /* Imagem circular */
+    object-fit: cover; /* Garante que a imagem cubra o espaço */
 }
 
 /* Nome do usuário */
 .user-name { 
     font-weight: 600; 
+    word-break: break-all;
 }
 
 /* Email do usuário */
 .user-email { 
     font-size: .8rem; 
     color: var(--muted-foreground); 
+    word-break: break-all;
 }
 
 /* Navegação da sidebar */
@@ -207,6 +218,7 @@ input {
     cursor: pointer; 
     font-size: 1rem; 
     color: var(--foreground); 
+    transition: background-color 0.2s, color 0.2s;
 }
 
 /* Efeito hover nos botões */
@@ -223,7 +235,12 @@ input {
 /* Botão de logout */
 .btn-logout { 
     background-color: var(--danger); 
+    color: var(--danger-foreground);
     margin-top: 1rem; 
+    flex-shrink: 0;
+}
+.btn-logout:hover {
+    opacity: 0.9;
 }
 
 /* --- CONTEÚDO PRINCIPAL --- */
@@ -251,12 +268,14 @@ input {
 .btn {
     display: inline-block;
     padding: .75rem 1.5rem;
-    border: none;
+    border: 1px solid transparent;
     border-radius: .375rem;
     cursor: pointer;
     font-size: 1rem;
     font-weight: 500;
     width: 100%;
+    text-align: center;
+    transition: background-color 0.2s, color 0.2s, border-color 0.2s, opacity 0.2s;
 }
 
 /* Variante primária do botão */
@@ -264,6 +283,44 @@ input {
     background-color: var(--primary); 
     color: var(--primary-foreground); 
 }
+.btn-primary:hover {
+    opacity: 0.9;
+}
+
+/* Botão outline de perigo (vermelho) */
+.btn-danger-outline {
+    background-color: var(--card);
+    color: var(--danger);
+    border-color: var(--danger);
+}
+.btn-danger-outline:hover {
+    background-color: #fef2f2; /* Fundo vermelho bem claro */
+}
+
+
+/* Botão pequeno (para ações em tabelas) */
+.btn-sm {
+    padding: 0.25rem 0.6rem;
+    font-size: 0.875rem;
+    font-weight: 500;
+    border-radius: .25rem;
+    width: auto; /* Tamanho automático */
+    display: inline-block;
+    cursor: pointer;
+    border: 1px solid transparent;
+    transition: background-color 0.2s, color 0.2s, border-color 0.2s, opacity 0.2s;
+}
+
+/* Botão de edição (azul outline) */
+.btn-edit {
+    background-color: var(--card);
+    color: var(--primary);
+    border-color: var(--primary);
+}
+.btn-edit:hover {
+    background-color: #eff6ff; /* Fundo azul bem claro */
+}
+
 
 /* Componente card */
 .card {
@@ -271,6 +328,7 @@ input {
     border: 1px solid var(--border);
     border-radius: .75rem;
     margin-bottom: 1.5rem;
+    overflow: hidden; /* Garante que o conteúdo respeite a borda */
 }
 
 /* Conteúdo do card */
@@ -282,7 +340,20 @@ input {
 .card .card-header { 
     padding: 1.5rem 1.5rem 0; 
     text-align: left; 
+    border-bottom: 1px solid var(--border);
+    padding-bottom: 1.5rem;
+    margin-bottom: 0;
 }
+/* Ajuste para card-header sem borda quando não está no topo */
+.card > .card-header {
+    border-bottom: 1px solid var(--border);
+    margin-bottom: 0;
+    padding-bottom: 1.5rem;
+}
+.card > .card-content {
+    /* Garante que o padding não se junte estranhamente */
+}
+
 
 /* Título pequeno para cards */
 .card-title-sm { 
@@ -321,17 +392,33 @@ input {
 /* Grid de 2 colunas */
 .grid-2 { 
     display: grid; 
-    grid-template-columns: repeat(2, 1fr); 
+    grid-template-columns: repeat(1, 1fr); /* Padrão mobile */
     gap: 1.5rem; 
 }
 
 /* Grid de 4 colunas */
 .grid-4 { 
     display: grid; 
-    grid-template-columns: repeat(4, 1fr); 
+    grid-template-columns: repeat(1, 1fr); /* Padrão mobile */
     gap: 1.5rem; 
     margin-bottom: 1.5rem; 
 }
+
+/* Media queries para grids em telas maiores */
+@media (min-width: 768px) {
+    .grid-2 {
+        grid-template-columns: repeat(2, 1fr); 
+    }
+    .grid-4 {
+        grid-template-columns: repeat(2, 1fr); 
+    }
+}
+@media (min-width: 1024px) {
+    .grid-4 {
+        grid-template-columns: repeat(4, 1fr); 
+    }
+}
+
 
 /* Tabela de dados */
 .data-table {
@@ -344,6 +431,7 @@ input {
     padding: .75rem 1rem;
     border-bottom: 1px solid var(--border); /* Linhas divisórias */
     text-align: left;
+    vertical-align: middle;
 }
 
 /* Cabeçalho da tabela */
@@ -351,7 +439,17 @@ input {
     font-weight: 600; 
     color: var(--muted-foreground); 
     font-size: .9rem; 
+    background-color: #f8fafc; /* Fundo leve para cabeçalho */
 }
+
+/* Célula de Ações (para botões) */
+.data-table .actions-cell {
+    display: flex;
+    gap: 0.5rem;
+    align-items: center;
+    white-space: nowrap; /* Impede que os botões quebrem linha */
+}
+
 
 /* Componente badge/etiqueta */
 .badge {
@@ -362,6 +460,7 @@ input {
     font-weight: 500;
     background-color: #e2e8f0;
     color: #334155;
+    line-height: 1.2;
 }
 
 /* Variante de sucesso do badge */
