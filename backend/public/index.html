@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8"> <meta name="viewport" content="width=device-width, initial-scale=1.0"> <title>Sistema Acadêmico</title> <link rel="stylesheet" href="style.css">
+    
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+    <div id="app">
+        
+        <div id="login-view" class="view active">
+            <div class="login-container">
+                <div class="card">
+                    <div class="card-header">
+                        <div class="logo">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-graduation-cap">
+                                <path d="M22 10v6M2 10l10-5 10 5-10 5z"/>
+                                <path d="M6 12v5c3 3 9 3 12 0v-5"/>
+                            </svg>
+                        </div>
+                        <h1 class="card-title">Sistema Acadêmico</h1>
+                        <p class="card-description">Controle de Faltas e Notas</p>
+                    </div>
+                    
+                    <div class="card-content">
+                        <form id="login-form">
+                            <div class="form-group">
+                                <label for="email">Email</label>
+                                <input type="email" id="email" value="admin@exemplo.com" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="password">Senha</label>
+                                <input type="password" id="password" value="123456" required>
+                            </div>
+                            <button type="submit" class="btn btn-primary">Entrar</button>
+                        </form>
+                        
+                        <p id="login-error" class="error-message"></p>
+                         
+                         <div class="test-data">
+                            <p>Use os dados de teste ou registre-se.</p>
+                        </div>
+
+                        <p class="toggle-link" id="show-register">Não tem conta? <strong>Registre-se</strong></p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div id="register-view" class="view">
+            <div class="login-container"> <div class="card">
+                    <div class="card-header">
+                        <div class="logo">
+                           <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-user-plus"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><line x1="19" x2="19" y1="8" y2="14"/><line x1="22" x2="16" y1="11" y2="11"/></svg>
+                        </div>
+                        <h1 class="card-title">Criar Conta</h1>
+                        <p class="card-description">Registre-se para começar</p>
+                    </div>
+                    
+                    <div class="card-content">
+                        <form id="register-form">
+                            <div class="form-group">
+                                <label for="register-name">Nome Completo</label>
+                                <input type="text" id="register-name" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="register-email">Email</label>
+                                <input type="email" id="register-email" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="register-password">Senha</label>
+                                <input type="password" id="register-password" required>
+                            </div>
+                             <div class="form-group">
+                                <label for="register-confirm-password">Confirmar Senha</label>
+                                <input type="password" id="register-confirm-password" required>
+                            </div>
+                            <button type="submit" class="btn btn-primary">Registrar</button>
+                        </form>
+                        
+                        <p id="register-error" class="error-message"></p>
+                        
+                        <p class="toggle-link" id="show-login">Já tem conta? <strong>Faça login</strong></p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+
+        <div id="main-view" class="view">
+            <aside class="sidebar" id="sidebar-container"></aside>
+            
+            <main class="main-content" id="main-content-container"></main>
+        </div>
+    </div>
+    
+    <script src="script.js"></script>
+</body>
+</html>
