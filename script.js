@@ -1,31 +1,12 @@
-// Aguarda o carregamento completo do DOM antes de executar o código
 document.addEventListener('DOMContentLoaded', () => {
+    // --- CONFIGURAÇÃO DA API ---
+    // Endpoint apontando para o seu EC2
+    const API_BASE_URL = 'http://54.197.1.2:3000/api'; 
 
-    // --- DADOS MOCK (FICTÍCIOS) PARA TESTES ---
-    // Usados apenas para NOVOS usuários registrados
-    const mockSubjects = [
-        { id: '1', name: 'Engenharia de Software', code: 'CS401', professor: 'Dr. Ana', credits: 4, schedule: 'Seg 10:00-12:00' },
-        { id: '2', name: 'Banco de Dados', code: 'CS305', professor: 'Prof. Beto', credits: 4, schedule: 'Qua 14:00-16:00' },
-    ];
-    const mockAttendance = [
-        { id: '1', subjectId: '1', date: '2024-01-15', present: true, justification: '' },
-        { id: '2', subjectId: '1', date: '2024-01-17', present: false, justification: 'Consulta médica' },
-    ];
-    const mockGrades = [
-        { id: '1', subjectId: '1', activityName: 'Prova 1', weight: 3, score: 8.5, maxScore: 10, date: '2024-01-20' },
-        { id: '2', subjectId: '2', activityName: 'Projeto Final', weight: 4, score: 9.5, maxScore: 10, date: '2024-01-30' },
-    ];
-
-    // --- GERENCIAMENTO DE ESTADO DA APLICAÇÃO ---
-    
-    // Objeto que armazena todos os usuários, carregado do localStorage
-    let appUsersDB = {}; 
-
-    // Objeto que armazena o estado global da aplicação
     let state = {
         isAuthenticated: false,
         currentView: 'dashboard',
-        user: null // Armazenará os dados do usuário logado: { name, email, avatar, subjects, attendance, grades }
+        user: null // Estrutura: { id, name, email, subjects: [], attendance: [], grades: [] }
     };
 
     // --- SELEÇÃO DE ELEMENTOS DO DOM ---
@@ -44,184 +25,173 @@ document.addEventListener('DOMContentLoaded', () => {
     const showRegisterBtn = document.getElementById('show-register');
     const showLoginBtn = document.getElementById('show-login');
 
-    // --- FUNÇÕES DE PERSISTÊNCIA (localStorage) ---
+    // --- FUNÇÕES AUXILIARES DE DADOS (API) ---
 
-    // Salva o "banco de dados" completo de usuários no localStorage
-    function saveDB() {
+    // Busca dados atualizados do backend e atualiza o estado local
+    async function refreshUserData() {
+        if (!state.user || !state.user.id) return;
         try {
-            localStorage.setItem('appUsersDB', JSON.stringify(appUsersDB));
-        } catch (error) {
-            console.error("Erro ao salvar DB de usuários no localStorage:", error);
-        }
-    }
-
-    // Carrega o "banco de dados" completo de usuários
-    function loadDB() {
-        try {
-            appUsersDB = JSON.parse(localStorage.getItem('appUsersDB') || '{}');
+            const userId = state.user.id;
             
-            // Adiciona o usuário admin@exemplo.com se ele não existir (para testes)
-            if (!appUsersDB['admin@exemplo.com']) {
-                appUsersDB['admin@exemplo.com'] = {
-                    name: 'João Silva (Admin)',
-                    email: 'admin@exemplo.com',
-                    password: '123456',
-                    avatar: 'https://github.com/shadcn.png',
-                    subjects: mockSubjects,
-                    attendance: mockAttendance,
-                    grades: mockGrades
-                };
-                saveDB();
-            }
+            // Busca Matérias, Faltas e Notas em paralelo
+            const [subjectsRes, attendanceRes, gradesRes] = await Promise.all([
+                fetch(`${API_BASE_URL}/subjects/${userId}`),
+                fetch(`${API_BASE_URL}/attendance/${userId}`),
+                fetch(`${API_BASE_URL}/grades/${userId}`)
+            ]);
 
-        } catch (error) {
-            console.error("Erro ao carregar DB de usuários:", error);
-            appUsersDB = {};
-        }
-    }
+            const subjects = await subjectsRes.json();
+            const attendance = await attendanceRes.json();
+            const grades = await gradesRes.json();
 
-    // Salva os dados acadêmicos (subjects, attendance, grades) DO USUÁRIO ATUAL de volta no DB
-    function saveData() {
-        if (!state.user || !state.user.email) return; // Não salva se não houver usuário logado
-        
-        try {
-            // Atualiza os dados do usuário logado dentro do DB principal
-            appUsersDB[state.user.email] = state.user;
-            saveDB(); // Salva o DB principal atualizado
-        } catch (error)
-        {
-            console.error("Erro ao salvar dados do usuário:", error);
-        }
-    }
-
-    // Salva o status de autenticação (quem está logado)
-    function saveAuth() {
-        try {
-            localStorage.setItem('authState', JSON.stringify({
-                isAuthenticated: state.isAuthenticated,
-                userEmail: state.user ? state.user.email : null
+            // Atualiza estado
+            state.user.subjects = subjects;
+            
+            // Mapeia snake_case (banco) para camelCase (frontend) se necessário
+            state.user.attendance = attendance.map(a => ({
+                id: a.id,
+                subjectId: a.subject_id,
+                date: a.date, 
+                present: Boolean(a.present),
+                justification: a.justification
             }));
+
+            state.user.grades = grades.map(g => ({
+                id: g.id,
+                subjectId: g.subject_id,
+                activityName: g.activity_name,
+                weight: Number(g.weight),
+                score: Number(g.score),
+                maxScore: Number(g.max_score),
+                date: g.date
+            }));
+
+            renderApp();
         } catch (error) {
-            console.error("Erro ao salvar autenticação no localStorage:", error);
+            console.error("Erro ao carregar dados:", error);
+            alert("Erro de conexão com o servidor. Verifique se a API está rodando.");
         }
     }
 
-    // Carrega o estado de autenticação e os dados do usuário logado
-    function loadState() {
-        loadDB(); // Garante que o DB de usuários esteja carregado
-        
-        const savedAuth = localStorage.getItem('authState');
-        if (savedAuth) {
-            const parsedAuth = JSON.parse(savedAuth);
-            // Se estava logado e o email existe
-            if (parsedAuth.isAuthenticated && parsedAuth.userEmail && appUsersDB[parsedAuth.userEmail]) {
-                state.isAuthenticated = true;
-                // Carrega os dados do usuário do DB para o estado
-                state.user = appUsersDB[parsedAuth.userEmail];
+    // --- SISTEMA DE AUTENTICAÇÃO ---
+
+    async function login(email, password) {
+        try {
+            const res = await fetch(`${API_BASE_URL}/login`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ email, password })
+            });
+
+            if (!res.ok) {
+                const data = await res.json();
+                throw new Error(data.error || 'Erro no login');
             }
+
+            const userData = await res.json(); // Retorna { id, name, email }
+            
+            state.isAuthenticated = true;
+            state.user = {
+                id: userData.id,
+                name: userData.name,
+                email: userData.email,
+                avatar: 'https://github.com/shadcn.png', // Placeholder
+                subjects: [], attendance: [], grades: []
+            };
+
+            // Salva sessão básica no localStorage para persistir F5
+            localStorage.setItem('userSession', JSON.stringify({
+                id: userData.id,
+                name: userData.name,
+                email: userData.email
+            }));
+
+            await refreshUserData();
+        } catch (error) {
+            loginError.textContent = error.message;
         }
     }
 
-    // --- CONTROLE DE VIEWS (Login/Registro) ---
+    async function register(name, email, password, confirmPassword) {
+        if (password !== confirmPassword) {
+            registerError.textContent = 'As senhas não coincidem.';
+            return;
+        }
+        try {
+            const res = await fetch(`${API_BASE_URL}/register`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ name, email, password })
+            });
+
+            if (!res.ok) {
+                const data = await res.json();
+                throw new Error(data.error || 'Erro ao registrar');
+            }
+
+            alert('Conta registrada com sucesso! Faça o login.');
+            showLoginView();
+        } catch (error) {
+            registerError.textContent = error.message;
+        }
+    }
+
+    function logout() {
+        state.isAuthenticated = false;
+        state.user = null;
+        localStorage.removeItem('userSession');
+        showLoginView();
+    }
+
+    function loadState() {
+        const session = localStorage.getItem('userSession');
+        if (session) {
+            const parsed = JSON.parse(session);
+            state.user = { 
+                ...parsed, 
+                avatar: 'https://github.com/shadcn.png',
+                subjects: [], attendance: [], grades: []
+            };
+            state.isAuthenticated = true;
+            refreshUserData(); // Carrega os dados reais do banco
+        } else {
+            showLoginView();
+        }
+    }
+
+    // --- CONTROLE DE VIEWS ---
 
     function showLoginView() {
         loginView.classList.add('active');
         registerView.classList.remove('active');
         mainView.classList.remove('active');
         loginError.textContent = '';
-        registerError.textContent = '';
     }
 
     function showRegisterView() {
         loginView.classList.remove('active');
         registerView.classList.add('active');
         mainView.classList.remove('active');
-        loginError.textContent = '';
         registerError.textContent = '';
     }
 
-    // --- SISTEMA DE AUTENTICAÇÃO ---
-
-    function register(name, email, password, confirmPassword) {
-        if (!name || !email || !password || !confirmPassword) {
-            registerError.textContent = 'Por favor, preencha todos os campos.';
-            return;
-        }
-        if (password !== confirmPassword) {
-            registerError.textContent = 'As senhas não coincidem.';
-            return;
-        }
-        // Verifica se o email já existe no DB
-        if (appUsersDB[email]) {
-            registerError.textContent = 'Este email já está cadastrado.';
-            return;
-        }
-
-        // Cria novo usuário
-        const newUser = {
-            name,
-            email,
-            password, // Em um app real, isso deve ser "hasheado"
-            avatar: 'https://github.com/shadcn.png', // Avatar padrão
-            subjects: [], // Começa com dados vazios
-            attendance: [],
-            grades: []
-        };
-
-        // Salva o novo usuário no DB
-        appUsersDB[email] = newUser;
-        saveDB();
-
-        alert('Conta registrada com sucesso! Por favor, faça o login.');
-        showLoginView();
-    }
-
-
-    function login(email, password) {
-        const userFromDB = appUsersDB[email];
-
-        // Verifica se usuário existe e se a senha está correta
-        if (!userFromDB || userFromDB.password !== password) {
-            loginError.textContent = 'Email ou senha incorretos.';
-            return;
-        }
-        
-        // Sucesso no login
-        state.isAuthenticated = true;
-        state.user = userFromDB; // Carrega dados do usuário no estado
-        saveAuth(); // Salva o status de login
-        renderApp();
-    }
-
-    function logout() {
-        state.isAuthenticated = false;
-        state.user = null;
-        localStorage.removeItem('authState');
-        showLoginView(); // Mostra a tela de login ao sair
-    }
-
-    // --- SISTEMA DE RENDERIZAÇÃO DA INTERFACE ---
-
     function renderApp() {
         if (state.isAuthenticated && state.user) {
-            // Se autenticado, mostra a aplicação principal
             loginView.classList.remove('active');
             registerView.classList.remove('active');
             mainView.classList.add('active');
             renderSidebar();
             renderMainContent();
         } else {
-            // Se não autenticado, mostra tela de login
             showLoginView();
         }
     }
 
     function renderSidebar() {
-        // Agora lê dados de 'state.user'
         sidebarContainer.innerHTML = `
             <div class="sidebar-header">
                 <div class="logo">
-                   <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-graduation-cap"><path d="M22 10v6M2 10l10-5 10 5-10 5z"/><path d="M6 12v5c3 3 9 3 12 0v-5"/></svg>
+                   <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 10v6M2 10l10-5 10 5-10 5z"/><path d="M6 12v5c3 3 9 3 12 0v-5"/></svg>
                 </div>
                 <div>
                     <h2>Sistema</h2>
@@ -246,7 +216,6 @@ document.addEventListener('DOMContentLoaded', () => {
             <button id="logout-btn" class="btn btn-logout">Sair</button>
         `;
 
-        // Adiciona event listeners aos botões de navegação
         sidebarContainer.querySelectorAll('.nav-btn').forEach(btn => {
             btn.addEventListener('click', () => {
                 state.currentView = btn.dataset.view;
@@ -267,11 +236,9 @@ document.addEventListener('DOMContentLoaded', () => {
             case 'reports': renderReports(); break;
             case 'settings': renderSettings(); break;
         }
-        // Adiciona event listeners globais para botões de ação (deleção)
         addGlobalEventListeners();
     }
 
-    // Adiciona listeners para botões que são re-renderizados (como delete e edit)
     function addGlobalEventListeners() {
         // Listeners de Exclusão
         document.querySelectorAll('.btn-delete-subject').forEach(btn => {
@@ -286,18 +253,17 @@ document.addEventListener('DOMContentLoaded', () => {
 
         // Listeners de Edição
         document.querySelectorAll('.btn-edit-subject').forEach(btn => {
-            btn.addEventListener('click', () => openSubjectForm(btn.dataset.id));
+            btn.addEventListener('click', () => openSubjectForm(Number(btn.dataset.id)));
         });
         document.querySelectorAll('.btn-edit-attendance').forEach(btn => {
-            btn.addEventListener('click', () => openAttendanceForm(btn.dataset.id));
+            btn.addEventListener('click', () => openAttendanceForm(Number(btn.dataset.id)));
         });
          document.querySelectorAll('.btn-edit-grade').forEach(btn => {
-            btn.addEventListener('click', () => openGradeForm(btn.dataset.id));
+            btn.addEventListener('click', () => openGradeForm(Number(btn.dataset.id)));
         });
     }
 
     // --- DASHBOARD ---
-    // Modificado para ler de 'state.user.*'
     function renderDashboard() {
         const totalSubjects = state.user.subjects.length;
         const totalClasses = state.user.attendance.length;
@@ -391,28 +357,24 @@ document.addEventListener('DOMContentLoaded', () => {
                 options: { scales: { y: { beginAtZero: true, max: 10 } } }
             });
         } catch(e) {
-            console.warn("Chart.js não carregado ou erro ao renderizar gráficos.", e);
+            console.warn("Chart.js não carregado.", e);
         }
     }
 
     // --- GERENCIADOR DE MATÉRIAS (CRUD) ---
-    // Modificado para ler de 'state.user.subjects'
     function renderSubjectsManager() {
         mainContentContainer.innerHTML = `
             <div class="header">
                 <h1>Matérias</h1>
-                <p>Gerencie suas disciplinas do semestre</p>
+                <p>Gerencie suas disciplinas</p>
             </div>
              <div class="card">
-                <div class="card-header">
-                    <h3 class="card-title">Adicionar Matéria</h3>
-                </div>
+                <div class="card-header"><h3 class="card-title">Adicionar Matéria</h3></div>
                 <div class="card-content" id="add-subject-form">
                     <button id="btn-open-add-subject" class="btn btn-primary">+ Nova Matéria</button>
                     <div id="subject-form-wrapper" style="margin-top:1rem; display:none;"></div>
                 </div>
             </div>
-        
             <div class="card">
                 <div class="card-content">
                     <table class="data-table">
@@ -445,45 +407,24 @@ document.addEventListener('DOMContentLoaded', () => {
                 </div>
             </div>
         `;
-        
-        document.getElementById('btn-open-add-subject').addEventListener('click', () => {
-            openSubjectForm(); // Abre formulário para "Criar" (sem ID)
-        });
+        document.getElementById('btn-open-add-subject').addEventListener('click', () => openSubjectForm());
     }
 
     function openSubjectForm(id = null) {
         const isEditing = id !== null;
         const subject = isEditing ? state.user.subjects.find(s => s.id === id) : {};
-        if (isEditing && !subject) {
-            console.error("Matéria não encontrada para edição");
-            return;
-        }
+        if (isEditing && !subject) return;
 
         const formWrapper = document.getElementById('subject-form-wrapper');
         formWrapper.innerHTML = `
             <div class="card" style="padding:0.75rem;">
                 <div class="card-content">
                     <input type="hidden" id="subject-id" value="${isEditing ? subject.id : ''}">
-                    <div class="form-group">
-                        <label for="nomeMateria">Nome da Matéria</label>
-                        <input type="text" id="nomeMateria" placeholder="Ex: Matemática" value="${isEditing ? subject.name : ''}">
-                    </div>
-                    <div class="form-group">
-                        <label for="cadCodigo">Código da Matéria</label>
-                        <input type="text" id="cadCodigo" placeholder="Ex: MAT101" value="${isEditing ? subject.code : ''}">
-                    </div>
-                    <div class="form-group">
-                        <label for="cadProfessor">Nome do Professor</label>
-                        <input type="text" id="cadProfessor" placeholder="Ex: Dr. Silva" value="${isEditing ? subject.professor : ''}">
-                    </div>
-                    <div class="form-group">
-                        <label for="cadCreditos">Créditos</label>
-                        <input type="number" id="cadCreditos" min="1" placeholder="Ex: 4" value="${isEditing ? subject.credits : ''}">
-                    </div>
-                    <div class="form-group">
-                        <label for="cadHorario">Horário</label>
-                        <input type="text" id="cadHorario" placeholder="Ex: Seg 10:00-12:00" value="${isEditing ? subject.schedule : ''}">
-                    </div>
+                    <div class="form-group"><label>Nome</label><input type="text" id="nomeMateria" value="${isEditing ? subject.name : ''}"></div>
+                    <div class="form-group"><label>Código</label><input type="text" id="cadCodigo" value="${isEditing ? subject.code : ''}"></div>
+                    <div class="form-group"><label>Professor</label><input type="text" id="cadProfessor" value="${isEditing ? subject.professor : ''}"></div>
+                    <div class="form-group"><label>Créditos</label><input type="number" id="cadCreditos" value="${isEditing ? subject.credits : ''}"></div>
+                    <div class="form-group"><label>Horário</label><input type="text" id="cadHorario" value="${isEditing ? subject.schedule : ''}"></div>
                     <div style="display:flex;gap:0.5rem;">
                         <button id="btn-save-materia" class="btn btn-primary">${isEditing ? 'Salvar Alterações' : 'Adicionar'}</button>
                         <button id="btn-cancelar-materia" class="btn">Cancelar</button>
@@ -492,108 +433,67 @@ document.addEventListener('DOMContentLoaded', () => {
             </div>
         `;
         formWrapper.style.display = 'block';
-
         document.getElementById('btn-cancelar-materia').addEventListener('click', () => {
             formWrapper.style.display = 'none';
             formWrapper.innerHTML = '';
         });
-
-        document.getElementById('btn-save-materia').addEventListener('click', () => {
-            saveSubject();
-        });
+        document.getElementById('btn-save-materia').addEventListener('click', saveSubject);
     }
 
-    // Modificado para salvar em 'state.user.subjects'
-    function saveSubject() {
+    async function saveSubject() {
         const id = document.getElementById('subject-id').value;
         const isEditing = id !== '';
+        
+        const payload = {
+            user_id: state.user.id,
+            name: document.getElementById('nomeMateria').value,
+            code: document.getElementById('cadCodigo').value,
+            professor: document.getElementById('cadProfessor').value,
+            credits: document.getElementById('cadCreditos').value,
+            schedule: document.getElementById('cadHorario').value
+        };
 
-        const name = document.getElementById('nomeMateria').value;
-        const code = document.getElementById('cadCodigo').value;
-        const professor = document.getElementById('cadProfessor').value;
-        const credits = document.getElementById('cadCreditos').value;
-        const schedule = document.getElementById('cadHorario').value;
+        if(!payload.name) return alert("Preencha o nome");
 
-        if (!name || !code || !professor || !credits || !schedule) {
-            alert('Por favor, preencha todos os campos.');
-            return;
-        }
+        const url = isEditing ? `${API_BASE_URL}/subjects/${id}` : `${API_BASE_URL}/subjects`;
+        const method = isEditing ? 'PUT' : 'POST';
 
-        if (isEditing) {
-            // Atualizar (Update)
-            const subjectIndex = state.user.subjects.findIndex(s => s.id === id);
-            if (subjectIndex > -1) {
-                state.user.subjects[subjectIndex] = { ...state.user.subjects[subjectIndex], name, code, professor, credits: parseInt(credits), schedule };
-            }
-        } else {
-            // Criar (Create)
-            const newSubject = {
-                id: String(Date.now()), // ID único
-                name,
-                code,
-                professor,
-                credits: parseInt(credits),
-                schedule
-            };
-            state.user.subjects.push(newSubject);
-        }
+        await fetch(url, {
+            method: method,
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+        });
 
-        saveData(); // Salva dados do usuário no localStorage
-        renderApp(); // Re-renderiza a aplicação
+        await refreshUserData();
     }
 
-    // Modificado para deletar de 'state.user.*'
-    function deleteSubject(id) {
-        if (confirm('Tem certeza que deseja excluir esta matéria? Isso também excluirá faltas e notas associadas.')) {
-            state.user.subjects = state.user.subjects.filter(s => s.id !== id);
-            // Opcional: Excluir dados associados
-            state.user.attendance = state.user.attendance.filter(a => a.subjectId !== id);
-            state.user.grades = state.user.grades.filter(g => g.subjectId !== id);
-            
-            saveData();
-            renderApp();
-        }
+    async function deleteSubject(id) {
+        if (!confirm('Excluir matéria?')) return;
+        await fetch(`${API_BASE_URL}/subjects/${id}`, { method: 'DELETE' });
+        await refreshUserData();
     }
 
     // --- GERENCIADOR DE FALTAS (CRUD) ---
-    // Modificado para ler de 'state.user.attendance' e 'state.user.subjects'
     function renderAttendanceManager() {
         mainContentContainer.innerHTML = `
-            <div class="header">
-                <h1>Controle de Faltas</h1>
-                <p>Gerencie sua presença nas aulas</p>
-            </div>
+            <div class="header"><h1>Controle de Faltas</h1><p>Gerencie sua presença</p></div>
             <div class="card">
-                <div class="card-header">
-                    <h3 class="card-title">Registrar Presença / Falta</h3>
-                </div>
+                <div class="card-header"><h3 class="card-title">Registrar</h3></div>
                 <div class="card-content" id="attendance-actions">
-                    <button id="btn-add-attendance" class="btn btn-primary">+ Adicionar registro de aula</button>
+                    <button id="btn-add-attendance" class="btn btn-primary">+ Novo registro</button>
                     <div id="attendance-form-wrapper" style="margin-top:1rem; display:none;"></div>
                 </div>
             </div>
             <div class="card">
                 <div class="card-content">
-                    <table class="data-table" id="attendance-table">
-                        <thead>
-                            <tr>
-                                <th>Data</th>
-                                <th>Matéria</th>
-                                <th>Status</th>
-                                <th>Justificativa</th>
-                                <th>Ações</th>
-                            </tr>
-                        </thead>
+                    <table class="data-table">
+                        <thead><tr><th>Data</th><th>Matéria</th><th>Status</th><th>Justificativa</th><th>Ações</th></tr></thead>
                         <tbody>
-                            ${state.user.attendance.sort((a,b) => new Date(b.date) - new Date(a.date)).map(a => `
+                            ${state.user.attendance.map(a => `
                                 <tr>
-                                    <td>${new Date(a.date).toLocaleDateString('pt-BR', {timeZone: 'UTC'})}</td>
-                                    <td>${state.user.subjects.find(s => s.id === a.subjectId)?.name || 'Matéria não encontrada'}</td>
-                                    <td>
-                                        <span class="badge ${a.present ? 'badge-success' : 'badge-danger'}">
-                                            ${a.present ? 'Presente' : 'Falta'}
-                                        </span>
-                                    </td>
+                                    <td>${new Date(a.date).toLocaleDateString()}</td>
+                                    <td>${state.user.subjects.find(s => s.id === a.subjectId)?.name || '-'}</td>
+                                    <td>${a.present ? '<span class="badge badge-success">Presente</span>' : '<span class="badge badge-danger">Falta</span>'}</td>
                                     <td>${a.justification || '-'}</td>
                                     <td class="actions-cell">
                                         <button class="btn-sm btn-edit btn-edit-attendance" data-id="${a.id}">Editar</button>
@@ -606,16 +506,14 @@ document.addEventListener('DOMContentLoaded', () => {
                 </div>
             </div>
         `;
-
-        document.getElementById('btn-add-attendance').addEventListener('click', () => {
-            openAttendanceForm(); // Abre para "Criar"
-        });
+        document.getElementById('btn-add-attendance').addEventListener('click', () => openAttendanceForm());
     }
 
     function openAttendanceForm(id = null) {
         const isEditing = id !== null;
         const record = isEditing ? state.user.attendance.find(a => a.id === id) : {};
-        if (isEditing && !record) return;
+        // Formata data para o input date (YYYY-MM-DD)
+        const dateVal = record.date ? new Date(record.date).toISOString().split('T')[0] : new Date().toISOString().split('T')[0];
 
         const wrapper = document.getElementById('attendance-form-wrapper');
         wrapper.innerHTML = `
@@ -623,102 +521,65 @@ document.addEventListener('DOMContentLoaded', () => {
                 <div class="card-content">
                     <input type="hidden" id="attendance-id" value="${isEditing ? record.id : ''}">
                     <div class="form-group">
-                        <label for="attendance-subject">Matéria</label>
+                        <label>Matéria</label>
                         <select id="attendance-subject">
                             ${state.user.subjects.map(s => `<option value="${s.id}" ${isEditing && s.id === record.subjectId ? 'selected' : ''}>${s.name}</option>`).join('')}
                         </select>
                     </div>
-                    <div class="form-group">
-                        <label for="attendance-date">Data</label>
-                        <input type="date" id="attendance-date" value="${isEditing ? record.date : new Date().toISOString().slice(0,10)}">
-                    </div>
-                    <div class="form-group">
-                        <label for="attendance-status">Status</label>
+                    <div class="form-group"><label>Data</label><input type="date" id="attendance-date" value="${dateVal}"></div>
+                    <div class="form-group"><label>Status</label>
                         <select id="attendance-status">
                             <option value="present" ${isEditing && record.present ? 'selected' : ''}>Presente</option>
                             <option value="absent" ${isEditing && !record.present ? 'selected' : ''}>Falta</option>
                         </select>
                     </div>
-                    <div class="form-group">
-                        <label for="attendance-justification">Justificativa (opcional)</label>
-                        <input type="text" id="attendance-justification" placeholder="Ex: Consulta médica" value="${isEditing ? record.justification || '' : ''}">
-                    </div>
+                    <div class="form-group"><label>Justificativa</label><input type="text" id="attendance-justification" value="${record.justification || ''}"></div>
                     <div style="display:flex;gap:0.5rem;">
-                        <button id="attendance-save" class="btn btn-primary">${isEditing ? 'Salvar Alterações' : 'Salvar'}</button>
+                        <button id="attendance-save" class="btn btn-primary">Salvar</button>
                         <button id="attendance-cancel" class="btn">Cancelar</button>
                     </div>
                 </div>
             </div>
         `;
         wrapper.style.display = 'block';
-
-        document.getElementById('attendance-cancel').addEventListener('click', () => {
-            wrapper.style.display = 'none';
-            wrapper.innerHTML = '';
-        });
-
-        document.getElementById('attendance-save').addEventListener('click', () => {
-            saveAttendance();
-        });
+        document.getElementById('attendance-cancel').addEventListener('click', () => { wrapper.style.display = 'none'; wrapper.innerHTML = ''; });
+        document.getElementById('attendance-save').addEventListener('click', saveAttendance);
     }
 
-    // Modificado para salvar em 'state.user.attendance'
-    function saveAttendance() {
+    async function saveAttendance() {
         const id = document.getElementById('attendance-id').value;
         const isEditing = id !== '';
+        const payload = {
+            user_id: state.user.id,
+            subject_id: document.getElementById('attendance-subject').value,
+            date: document.getElementById('attendance-date').value,
+            present: document.getElementById('attendance-status').value === 'present',
+            justification: document.getElementById('attendance-justification').value
+        };
 
-        const subjectId = document.getElementById('attendance-subject').value;
-        const date = document.getElementById('attendance-date').value;
-        const status = document.getElementById('attendance-status').value;
-        const justification = document.getElementById('attendance-justification').value.trim();
+        const url = isEditing ? `${API_BASE_URL}/attendance/${id}` : `${API_BASE_URL}/attendance`;
+        const method = isEditing ? 'PUT' : 'POST';
 
-        if (!subjectId || !date) {
-            alert('Preencha a matéria e a data.');
-            return;
-        }
-
-        if (isEditing) {
-            // Atualizar (Update)
-            const recordIndex = state.user.attendance.findIndex(a => a.id === id);
-            if (recordIndex > -1) {
-                state.user.attendance[recordIndex] = { ...state.user.attendance[recordIndex], subjectId, date, present: status === 'present', justification: justification || '' };
-            }
-        } else {
-            // Criar (Create)
-            const newRecord = {
-                id: String(Date.now()),
-                subjectId,
-                date,
-                present: status === 'present',
-                justification: justification || ''
-            };
-            state.user.attendance.push(newRecord);
-        }
-        
-        saveData();
-        renderApp();
+        await fetch(url, {
+            method: method,
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+        });
+        await refreshUserData();
     }
 
-    function deleteAttendance(id) {
-         if (confirm('Tem certeza que deseja excluir este registro de presença?')) {
-            state.user.attendance = state.user.attendance.filter(a => a.id !== id);
-            saveData();
-            renderApp();
-         }
+    async function deleteAttendance(id) {
+        if (!confirm('Excluir?')) return;
+        await fetch(`${API_BASE_URL}/attendance/${id}`, { method: 'DELETE' });
+        await refreshUserData();
     }
 
     // --- GERENCIADOR DE NOTAS (CRUD) ---
-    // Modificado para ler de 'state.user.grades'
     function renderGradesManager() {
          mainContentContainer.innerHTML = `
-            <div class="header">
-                <h1>Controle de Notas</h1>
-                <p>Gerencie suas notas e acompanhe seu desempenho</p>
-            </div>
+            <div class="header"><h1>Notas</h1><p>Gerencie suas avaliações</p></div>
             <div class="card">
-                <div class="card-header">
-                    <h3 class="card-title">Registrar Nota</h3>
-                </div>
+                <div class="card-header"><h3 class="card-title">Registrar Nota</h3></div>
                 <div class="card-content" id="grades-actions">
                     <button id="btn-add-grade" class="btn btn-primary">+ Adicionar nota</button>
                     <div id="grade-form-wrapper" style="margin-top:1rem; display:none;"></div>
@@ -726,268 +587,133 @@ document.addEventListener('DOMContentLoaded', () => {
             </div>
             <div class="card">
                 <div class="card-content">
-                    <table class="data-table" id="grades-table">
-                        <thead>
-                            <tr>
-                                <th>Data</th>
-                                <th>Matéria</th>
-                                <th>Atividade</th>
-                                <th>Peso</th>
-                                <th>Nota</th>
-                                <th>Nota Convertida (0-10)</th>
-                                <th>Ações</th>
-                            </tr>
-                        </thead>
+                    <table class="data-table">
+                        <thead><tr><th>Matéria</th><th>Atividade</th><th>Nota</th><th>Peso</th><th>Ações</th></tr></thead>
                         <tbody>
-                            ${state.user.grades.sort((a,b) => new Date(b.date) - new Date(a.date)).map(g => {
-                                const convertedGrade = ((g.score / g.maxScore) * 10).toFixed(1);
-                                return `
-                                    <tr>
-                                        <td>${new Date(g.date).toLocaleDateString('pt-BR', {timeZone: 'UTC'})}</td>
-                                        <td>${state.user.subjects.find(s => s.id === g.subjectId)?.name || 'Matéria não encontrada'}</td>
-                                        <td>${g.activityName}</td>
-                                        <td>${g.weight}</td>
-                                        <td>${g.score} / ${g.maxScore}</td>
-                                        <td><span class="badge ${convertedGrade >= 7 ? 'badge-success' : 'badge-danger'}">${convertedGrade}</span></td>
-                                        <td class="actions-cell">
-                                            <button class="btn-sm btn-edit btn-edit-grade" data-id="${g.id}">Editar</button>
-                                            <button class="btn-sm btn-danger-outline btn-delete-grade" data-id="${g.id}">Excluir</button>
-                                        </td>
-                                    </tr>
-                                `
-                            }).join('')}
+                            ${state.user.grades.map(g => `
+                                <tr>
+                                    <td>${state.user.subjects.find(s => s.id === g.subjectId)?.name || '-'}</td>
+                                    <td>${g.activityName}</td>
+                                    <td>${g.score}/${g.maxScore}</td>
+                                    <td>${g.weight}</td>
+                                    <td class="actions-cell">
+                                        <button class="btn-sm btn-edit btn-edit-grade" data-id="${g.id}">Editar</button>
+                                        <button class="btn-sm btn-danger-outline btn-delete-grade" data-id="${g.id}">Excluir</button>
+                                    </td>
+                                </tr>
+                            `).join('')}
                         </tbody>
                     </table>
                 </div>
             </div>
         `;
-
-        document.getElementById('btn-add-grade').addEventListener('click', () => {
-            openGradeForm(); // Abre para "Criar"
-        });
+        document.getElementById('btn-add-grade').addEventListener('click', () => openGradeForm());
     }
     
     function openGradeForm(id = null) {
         const isEditing = id !== null;
         const grade = isEditing ? state.user.grades.find(g => g.id === id) : {};
-        if (isEditing && !grade) return;
+        const dateVal = grade.date ? new Date(grade.date).toISOString().split('T')[0] : new Date().toISOString().split('T')[0];
 
         const wrapper = document.getElementById('grade-form-wrapper');
         wrapper.innerHTML = `
             <div class="card" style="padding:0.75rem;">
                 <div class="card-content">
                     <input type="hidden" id="grade-id" value="${isEditing ? grade.id : ''}">
-                    <div class="form-group">
-                        <label for="grade-subject">Matéria</label>
+                    <div class="form-group"><label>Matéria</label>
                         <select id="grade-subject">
                             ${state.user.subjects.map(s => `<option value="${s.id}" ${isEditing && s.id === grade.subjectId ? 'selected' : ''}>${s.name}</option>`).join('')}
                         </select>
                     </div>
-                    <div class="form-group">
-                        <label for="grade-activity">Atividade</label>
-                        <input type="text" id="grade-activity" placeholder="Ex: Prova 2" value="${isEditing ? grade.activityName : ''}">
-                    </div>
-                    <div class="form-group">
-                        <label for="grade-weight">Peso</label>
-                        <input type="number" id="grade-weight" min="0" value="${isEditing ? grade.weight : '1'}">
-                    </div>
-                    <div class="form-group">
-                        <label for="grade-score">Nota obtida</label>
-                        <input type="number" id="grade-score" step="0.01" min="0" value="${isEditing ? grade.score : '0'}">
-                    </div>
-                    <div class="form-group">
-                        <label for="grade-maxscore">Nota máxima</label>
-                        <input type="number" id="grade-maxscore" step="0.01" min="0.01" value="${isEditing ? grade.maxScore : '10'}">
-                    </div>
-                    <div class="form-group">
-                        <label for="grade-date">Data</label>
-                        <input type="date" id="grade-date" value="${isEditing ? grade.date : new Date().toISOString().slice(0,10)}">
-                    </div>
+                    <div class="form-group"><label>Atividade</label><input type="text" id="grade-activity" value="${isEditing ? grade.activityName : ''}"></div>
+                    <div class="form-group"><label>Peso</label><input type="number" id="grade-weight" value="${isEditing ? grade.weight : '1'}"></div>
+                    <div class="form-group"><label>Nota</label><input type="number" id="grade-score" step="0.1" value="${isEditing ? grade.score : ''}"></div>
+                    <div class="form-group"><label>Máximo</label><input type="number" id="grade-maxscore" value="${isEditing ? grade.maxScore : '10'}"></div>
+                    <div class="form-group"><label>Data</label><input type="date" id="grade-date" value="${dateVal}"></div>
                     <div style="display:flex;gap:0.5rem;">
-                        <button id="grade-save" class="btn btn-primary">${isEditing ? 'Salvar Alterações' : 'Salvar'}</button>
+                        <button id="grade-save" class="btn btn-primary">Salvar</button>
                         <button id="grade-cancel" class="btn">Cancelar</button>
                     </div>
                 </div>
             </div>
         `;
         wrapper.style.display = 'block';
-
-        document.getElementById('grade-cancel').addEventListener('click', () => {
-            wrapper.style.display = 'none';
-            wrapper.innerHTML = '';
-        });
-
-        document.getElementById('grade-save').addEventListener('click', () => {
-            saveGrade();
-        });
+        document.getElementById('grade-cancel').addEventListener('click', () => { wrapper.style.display = 'none'; wrapper.innerHTML = ''; });
+        document.getElementById('grade-save').addEventListener('click', saveGrade);
     }
 
-    // Modificado para salvar em 'state.user.grades'
-    function saveGrade() {
+    async function saveGrade() {
         const id = document.getElementById('grade-id').value;
         const isEditing = id !== '';
-
-        const subjectId = document.getElementById('grade-subject').value;
-        const activityName = document.getElementById('grade-activity').value.trim();
-        const weight = Number(document.getElementById('grade-weight').value);
-        const score = Number(document.getElementById('grade-score').value);
-        const maxScore = Number(document.getElementById('grade-maxscore').value);
-        const date = document.getElementById('grade-date').value;
-
-        if (!subjectId || !activityName || !date || maxScore <= 0) {
-            alert('Preencha os campos obrigatórios corretamente (Matéria, Atividade, Data, Nota Máx > 0).');
-            return;
-        }
-        
-        const newGradeData = {
-            subjectId,
-            activityName,
-            weight: isNaN(weight) ? 1 : weight,
-            score: isNaN(score) ? 0 : score,
-            maxScore: isNaN(maxScore) ? 10 : maxScore,
-            date
+        const payload = {
+            user_id: state.user.id,
+            subject_id: document.getElementById('grade-subject').value,
+            activity_name: document.getElementById('grade-activity').value,
+            weight: document.getElementById('grade-weight').value,
+            score: document.getElementById('grade-score').value,
+            max_score: document.getElementById('grade-maxscore').value,
+            date: document.getElementById('grade-date').value
         };
 
-        if (isEditing) {
-            // Atualizar (Update)
-            const gradeIndex = state.user.grades.findIndex(g => g.id === id);
-            if(gradeIndex > -1) {
-                state.user.grades[gradeIndex] = { ...state.user.grades[gradeIndex], ...newGradeData };
-            }
-        } else {
-            // Criar (Create)
-            state.user.grades.push({
-                id: String(Date.now()),
-                ...newGradeData
-            });
-        }
+        const url = isEditing ? `${API_BASE_URL}/grades/${id}` : `${API_BASE_URL}/grades`;
+        const method = isEditing ? 'PUT' : 'POST';
 
-        saveData();
-        renderApp();
+        await fetch(url, {
+            method: method,
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+        });
+        await refreshUserData();
     }
     
-    function deleteGrade(id) {
-        if (confirm('Tem certeza que deseja excluir este registro de nota?')) {
-            state.user.grades = state.user.grades.filter(g => g.id !== id);
-            saveData();
-            renderApp();
-         }
+    async function deleteGrade(id) {
+        if (!confirm('Excluir nota?')) return;
+        await fetch(`${API_BASE_URL}/grades/${id}`, { method: 'DELETE' });
+        await refreshUserData();
     }
 
-
-    // --- TELAS ESTÁTICAS (Relatórios, Configurações) ---
-
+    // --- TELAS ESTÁTICAS ---
     function renderReports() {
         mainContentContainer.innerHTML = `
-            <div class="header">
-                <h1>Relatórios</h1>
-                <p>Análise detalhada do seu desempenho acadêmico</p>
-            </div>
+            <div class="header"><h1>Relatórios</h1></div>
             <div class="card">
-                <div class="card-header"><h3 class="card-title">Gerar Relatórios</h3></div>
-                <div class="card-content">
-                    <p>Esta funcionalidade pode ser implementada futuramente para gerar PDFs ou CSVs com base nos dados salvos.</p>
-                    <button class="btn" onclick="alert('Funcionalidade de PDF não implementada.')">Exportar PDF Completo</button>
-                </div>
+                <div class="card-content"><p>Funcionalidade em desenvolvimento.</p></div>
             </div>
         `;
     }
 
-    // Modificado para editar 'state.user' e limpar dados do usuário
     function renderSettings() {
         mainContentContainer.innerHTML = `
-            <div class="header">
-                <h1>Configurações</h1>
-                <p>Gerencie suas preferências</p>
-            </div>
+            <div class="header"><h1>Configurações</h1></div>
             <div class="card">
                 <div class="card-header"><h3 class="card-title">Perfil</h3></div>
                 <div class="card-content">
-                    <div class="form-group">
-                        <label for="name-setting">Nome</label>
-                        <input type="text" id="name-setting" value="${state.user.name}">
-                    </div>
-                     <div class="form-group">
-                        <label for="email-setting">Email</label>
-                        <input type="email" id="email-setting" value="${state.user.email}" readonly>
-                         <small>O email não pode ser alterado.</small>
-                    </div>
-                    <button id="btn-save-profile" class="btn btn-primary">Salvar Alterações de Perfil</button>
-                </div>
-            </div>
-             <div class="card">
-                <div class="card-header"><h3 class="card-title">Perigo</h3></div>
-                <div class="card-content">
-                     <p>Isto apagará permanentemente todas as suas matérias, faltas e notas.</p>
-                    <button id="btn-clear-data" class="btn btn-danger-outline">Apagar Todos os Meus Dados</button>
+                    <p><strong>Nome:</strong> ${state.user.name}</p>
+                    <p><strong>Email:</strong> ${state.user.email}</p>
                 </div>
             </div>
         `;
-
-        // Salvar alterações de perfil (nome)
-        document.getElementById('btn-save-profile').addEventListener('click', () => {
-            const newName = document.getElementById('name-setting').value;
-            if (newName && newName.trim() !== '') {
-                state.user.name = newName.trim();
-                saveData(); // Salva o nome atualizado no DB
-                renderSidebar(); // Atualiza a sidebar para mostrar o novo nome
-                alert('Nome atualizado com sucesso!');
-            } else {
-                alert('O nome não pode ficar em branco.');
-            }
-        });
-
-        // Apagar dados do USUÁRIO ATUAL
-        document.getElementById('btn-clear-data').addEventListener('click', () => {
-            if(confirm('ATENÇÃO! Você tem certeza que deseja apagar TODOS os seus dados acadêmicos (matérias, faltas, notas)? Esta ação não pode ser desfeita.')) {
-                if(confirm('Confirmação final: APAGAR TUDO?')) {
-                    // Limpa os dados apenas do usuário logado
-                    state.user.subjects = [];
-                    state.user.attendance = [];
-                    state.user.grades = [];
-                    
-                    saveData(); // Salva o estado "limpo" do usuário
-                    renderApp(); // Re-renderiza tudo
-                    alert('Todos os seus dados foram apagados.');
-                }
-            }
-        });
     }
 
-    // --- CONFIGURAÇÃO DE EVENT LISTENERS ---
+    // --- EVENT LISTENERS GERAIS ---
+    showRegisterBtn.addEventListener('click', (e) => { e.preventDefault(); showRegisterView(); });
+    showLoginBtn.addEventListener('click', (e) => { e.preventDefault(); showLoginView(); });
 
-    // Alternar para view de Registro
-    showRegisterBtn.addEventListener('click', (e) => {
-        e.preventDefault();
-        showRegisterView();
-    });
-
-    // Alternar para view de Login
-    showLoginBtn.addEventListener('click', (e) => {
-        e.preventDefault();
-        showLoginView();
-    });
-
-    // Submit do formulário de Login
     loginForm.addEventListener('submit', (e) => {
         e.preventDefault();
-        const email = document.getElementById('email').value;
-        const password = document.getElementById('password').value;
-        login(email, password);
+        login(document.getElementById('email').value, document.getElementById('password').value);
     });
 
-    // Submit do formulário de Registro
     registerForm.addEventListener('submit', (e) => {
         e.preventDefault();
-        const name = document.getElementById('register-name').value;
-        const email = document.getElementById('register-email').value;
-        const password = document.getElementById('register-password').value;
-        const confirmPassword = document.getElementById('register-confirm-password').value;
-        register(name, email, password, confirmPassword);
+        register(
+            document.getElementById('register-name').value,
+            document.getElementById('register-email').value,
+            document.getElementById('register-password').value,
+            document.getElementById('register-confirm-password').value
+        );
     });
 
-    // --- INICIALIZAÇÃO DA APLICAÇÃO ---
-    
-    loadState(); // Carrega dados do localStorage (DB de usuários e status de auth)
-    renderApp(); // Renderiza a aplicação (mostra login ou app principal)
+    // Inicialização
+    loadState();
 });
